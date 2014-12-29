@@ -16,20 +16,18 @@ type Client = (ClientState, WS.Connection)
 type ServerState = [Client]
 
 --clientExists :: Client -> ServerState -> Bool
-clientExists client = any ((== fst client) . fst)
-
---addClient :: Client -> ServerState -> ServerState
-addClient client clients = client : clients
-
+--addClient    :: Client -> ServerState -> ServerState
 --removeClient :: Client -> ServerState -> ServerState
-removeClient client = filter ((/= fst client) . fst)
+--broadcast    :: Text   -> ServerState -> IO ()
+--main         :: IO ()
 
---broadcast :: Text -> ServerState -> IO ()
-broadcast message clients = do
-     T.putStrLn message
-     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
+clientExists client          = any ((== fst client) . fst)
+addClient    client clients  = client : clients
+removeClient client          = filter ((/= fst client) . fst)
+broadcast    message clients = do
+    T.putStrLn message
+    forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
-main :: IO ()
 main = do
     state <- newMVar []
     WS.runServer "0.0.0.0" 9160 $ application state
@@ -49,25 +47,19 @@ application state pending = do
                     "contain punctuation or whitespace, and " `mappend`
                     "cannot be empty" :: Text)
              | clientExists client clients ->
-                 WS.sendTextData connection ("User already exists" :: Text)
-             | otherwise ->
-                flip finally disconnect $ do
+                WS.sendTextData connection ("User already exists" :: Text)
+             | otherwise -> do
                 liftIO $ modifyMVar_ state $ \s -> do
                     let s' = addClient client s
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
                     broadcast (fst client `mappend` " joined") s'
                     return s'
                 talk connection state client
-           where
+          where
              prefix     = "Hi! I am "
              client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
-             disconnect = do
-                 s <- modifyMVar state $ \s ->
-                     let s' = removeClient client s in return (s', s')
-                 broadcast (fst client `mappend` " disconnected") s
 
 talk :: WS.Connection -> MVar ServerState -> Client -> IO ()
 talk conn state (user, _) = forever $ do
      msg <- WS.receiveData conn
-     liftIO $ readMVar state >>= broadcast
-              (user `mappend` ": " `mappend` msg)
+     liftIO $ readMVar state >>= broadcast (user `mappend` ": " `mappend` msg)
