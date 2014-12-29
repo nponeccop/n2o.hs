@@ -11,7 +11,8 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.WebSockets as WS
 
-type Client = (Text, WS.Connection)
+type ClientState = Text
+type Client = (ClientState, WS.Connection)
 type ServerState = [Client]
 
 --clientExists :: Client -> ServerState -> Bool
@@ -30,36 +31,36 @@ broadcast message clients = do
 
 main :: IO ()
 main = do
-     state <- newMVar []
-     WS.runServer "0.0.0.0" 9160 $ application state
+    state <- newMVar []
+    WS.runServer "0.0.0.0" 9160 $ application state
 
 application :: MVar ServerState -> WS.ServerApp
 application state pending = do
-    conn <- WS.acceptRequest pending
-    msg <- WS.receiveData conn
-    clients <- liftIO $ readMVar state
-    case msg of
-         _   | not (prefix `T.isPrefixOf` msg) ->
-               WS.sendTextData conn ("Wrong announcement" :: Text)
-             | any ($ fst client)
-                 [T.null, T.any isPunctuation, T.any isSpace] ->
-                    WS.sendTextData conn ("Name cannot " `mappend`
-                         "contain punctuation or whitespace, and " `mappend`
-                         "cannot be empty" :: Text)
+    connection <- WS.acceptRequest pending
+    message    <- WS.receiveDataMessage connection
+    clients    <- liftIO $ readMVar state
+    case message of
+         WS.Binary x -> T.putStrLn (WS.fromLazyByteString x)
+         WS.Text x
+             | not (prefix `T.isPrefixOf` (WS.fromLazyByteString x)) ->
+                WS.sendTextData connection ("Wrong announcement" :: Text)
+             | any ($ fst client) [T.null, T.any isPunctuation, T.any isSpace] ->
+                WS.sendTextData connection ("Name cannot " `mappend`
+                    "contain punctuation or whitespace, and " `mappend`
+                    "cannot be empty" :: Text)
              | clientExists client clients ->
-                 WS.sendTextData conn ("User already exists" :: Text)
-             | otherwise -> flip finally disconnect $ do
+                 WS.sendTextData connection ("User already exists" :: Text)
+             | otherwise ->
+                flip finally disconnect $ do
                 liftIO $ modifyMVar_ state $ \s -> do
                     let s' = addClient client s
-                    WS.sendTextData conn $
-                        "Welcome! Users: " `mappend`
-                        T.intercalate ", " (map fst s)
+                    WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
                     broadcast (fst client `mappend` " joined") s'
                     return s'
-                talk conn state client
+                talk connection state client
            where
              prefix     = "Hi! I am "
-             client     = (T.drop (T.length prefix) msg, conn)
+             client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
              disconnect = do
                  s <- modifyMVar state $ \s ->
                      let s' = removeClient client s in return (s', s')
