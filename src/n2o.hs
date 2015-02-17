@@ -31,7 +31,9 @@ broadcast    message clients = do
     T.putStrLn message
     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
-foo = BL.writeFile "foo.bert" $ encode $ showBERT (2::Int,"Foo" :: BL.ByteString)
+foo = BL.writeFile "foo.bert" bar
+
+bar = encode $ showBERT (2::Int,"Foo" :: BL.ByteString)
 
 main = do
     state <- newMVar []
@@ -57,6 +59,7 @@ application state pending = do
                 liftIO $ modifyMVar_ state $ \s -> do
                     let s' = addClient client s
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
+                    WS.sendBinaryData connection bar
                     broadcast (fst client `mappend` " joined") s'
                     return s'
                 talk connection state client

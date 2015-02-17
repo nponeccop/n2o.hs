@@ -17,6 +17,11 @@ function refreshUsers() {
 }
 
 function onMessage(event) {
+    if (event.data instanceof Blob)
+    {
+        alert("joBlob!")
+        return
+    }
     var p = $(document.createElement('p')).text(event.data);
 
     $('#messages').append(p);
