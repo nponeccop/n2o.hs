@@ -19,7 +19,10 @@ function refreshUsers() {
 function onMessage(event) {
     if (event.data instanceof Blob)
     {
-        alert("joBlob!")
+        $bert.on(event, function (x)
+        {
+            alert(JSON.stringify(x))
+        })
         return
     }
     var p = $(document.createElement('p')).text(event.data);
