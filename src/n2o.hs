@@ -31,7 +31,7 @@ broadcast    message clients = do
     T.putStrLn message
     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
-foo () = showBERT (2::Int,"Foo" :: BL.ByteString)
+foo = BL.writeFile "foo.bert" $ encode $ showBERT (2::Int,"Foo" :: BL.ByteString)
 
 main = do
     state <- newMVar []
