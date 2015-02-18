@@ -8,7 +8,7 @@ import Data.Binary
 import Network.WebSockets as WS
 
 eval :: BL.ByteString -> BL.ByteString
-eval x = encode $ showBERT x
+eval x = encode $ TupleTerm [AtomTerm "io", NilTerm, showBERT x]
 
 call fun arg = BL.concat [fun,  "('", arg, "');"]
 
