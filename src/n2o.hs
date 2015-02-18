@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.BERT (showBERT)
+import Data.BERT (showBERT, BERT(..), Term(..))
 import Data.Binary (encode)
 import Data.Char (isPunctuation, isSpace)
 import Data.Monoid (mappend)
@@ -18,6 +18,15 @@ type ClientState = Text
 type Client = (ClientState, WS.Connection)
 type ServerState = [Client]
 
+data Message
+    = Eval BL.ByteString
+    | KeepAlive -- for illustration only
+
+instance BERT Message where
+    readBERT = error "client.readBERT"
+    showBERT (Eval x) = showBERT x
+    showBERT KeepAlive = NilTerm
+
 --clientExists :: Client -> ServerState -> Bool
 --addClient    :: Client -> ServerState -> ServerState
 --removeClient :: Client -> ServerState -> ServerState
@@ -33,7 +42,7 @@ broadcast    message clients = do
 
 foo = BL.writeFile "foo.bert" bar
 
-bar = encode $ showBERT (2::Int,"Foo" :: BL.ByteString)
+bar = encode $ showBERT $ Eval "alert('Hello weaklings!')"
 
 main = do
     state <- newMVar []
@@ -47,7 +56,7 @@ application state pending = do
     case message of
          WS.Binary x -> T.putStrLn (WS.fromLazyByteString x)
          WS.Text x
-             | not (prefix `T.isPrefixOf` (WS.fromLazyByteString x)) ->
+             | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
                 WS.sendTextData connection ("Wrong announcement" :: Text)
              | any ($ fst client) [T.null, T.any isPunctuation, T.any isSpace] ->
                 WS.sendTextData connection ("Name cannot " `mappend`

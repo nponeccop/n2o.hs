@@ -21,7 +21,14 @@ function onMessage(event) {
     {
         $bert.on(event, function (x)
         {
-            alert(JSON.stringify(x))
+            if (typeof x == 'string')
+            {
+                eval(x)
+            }
+            else
+            {
+                alert("Unknown x of " + typeof x)
+            }
         })
         return
     }
