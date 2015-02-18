@@ -4,6 +4,7 @@ import Data.BERT (showBERT, BERT(..), Term(..),  showTerm)
 import Data.Binary (encode, decode)
 import Data.Char (isPunctuation, isSpace)
 import Data.Monoid (mappend)
+import Data.String (fromString)
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Control.Exception (finally)
@@ -50,6 +51,14 @@ call fun arg = BL.concat [fun,  "('", arg, "');"]
 
 bar user = encode $ showBERT $ Eval $ call "log" (user `mappend` " joined") `mappend`  call "addUser" user
 
+logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
+    let s' = addClient client s
+    print $ map fst s'
+    WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
+	--broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
+    return s'
+	-- talk connection state client
+
 main = do
     state <- newMVar []
     WS.runServer "0.0.0.0" 9160 $ application state
@@ -57,11 +66,15 @@ main = do
 application :: MVar ServerState -> WS.ServerApp
 application state pending = do
     connection <- WS.acceptRequest pending
+    nextMessage state connection
+
+nextMessage state connection = do
+    let loop = nextMessage state connection 
     message    <- WS.receiveDataMessage connection
     clients    <- liftIO $ readMVar state
     case message of
          WS.Binary x -> case decode x of
-			TupleTerm x -> print x
+			TupleTerm [AtomTerm "LOGON", AtomTerm name] -> logon state $ (fromString name,connection)
 			_ -> putStrLn "Protocol violation"
          WS.Text x
 			 | x == "PING" -> putStrLn "PING" 
