@@ -73,6 +73,8 @@ application state pending = do
     nextMessage state connection `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException))
     putStrLn "disconnected"
 
+sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fromString text) clients
+
 nextMessage state connection = do
     let loop = nextMessage state connection 
     message    <- WS.receiveDataMessage connection
@@ -81,7 +83,9 @@ nextMessage state connection = do
     case message of
          WS.Binary x -> case decode x of
 			TupleTerm [AtomTerm "LOGON", AtomTerm name] -> logon state (fromString name,connection) >> loop
+			TupleTerm [AtomTerm "MSG", AtomTerm text] -> sendMessage clients text >> loop
 			_ -> putStrLn "Protocol violation"
+
          WS.Text x
 			 | x == "PING" -> putStrLn "PING" >> loop
              | x == "N2O," -> putStrLn "N2O handshake" >> loop
