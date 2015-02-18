@@ -66,18 +66,26 @@ main = do
 application :: MVar ServerState -> WS.ServerApp
 application state pending = do
     connection <- WS.acceptRequest pending
+    putStrLn "accepted"
     nextMessage state connection
+    putStrLn "disconnected"
 
 nextMessage state connection = do
     let loop = nextMessage state connection 
     message    <- WS.receiveDataMessage connection
+    putStrLn "message"
     clients    <- liftIO $ readMVar state
     case message of
          WS.Binary x -> case decode x of
-			TupleTerm [AtomTerm "LOGON", AtomTerm name] -> logon state $ (fromString name,connection)
+			TupleTerm [AtomTerm "LOGON", AtomTerm name] -> logon state (fromString name,connection) >> loop
 			_ -> putStrLn "Protocol violation"
          WS.Text x
-			 | x == "PING" -> putStrLn "PING" 
+			 | x == "PING" -> putStrLn "PING" >> loop
+             | x == "N2O," -> putStrLn "N2O handshake" >> loop
+             | otherwise  -> do
+                putStrLn "protocol violation 2"
+                print x
+{-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
                 WS.sendTextData connection ("Wrong announcement" :: Text)
              | any ($ fst client) [T.null, T.any isPunctuation, T.any isSpace] ->
@@ -96,6 +104,7 @@ nextMessage state connection = do
           where
              prefix     = "Hi! I am "
              client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
+-}
 
 talk :: WS.Connection -> MVar ServerState -> Client -> IO ()
 talk conn state (user, _) = forever $ do
