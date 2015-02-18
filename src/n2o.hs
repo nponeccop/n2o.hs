@@ -38,9 +38,6 @@ instance BERT Message where
 clientExists client          = any ((== fst client) . fst)
 addClient    client clients  = client : clients
 removeClient client          = filter ((/= fst client) . fst)
-broadcast    message clients = do
-    T.putStrLn message
-    forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
 broadcastBinary message clients 
 	= forM_ clients $ \(_, conn) -> WS.sendBinaryData conn message
@@ -58,7 +55,6 @@ logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
     print $ map fst s'
     send connection ("joinSession()" :: BL.ByteString)
     --WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
-	--broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
     return s'
 	-- talk connection state client
 
@@ -70,8 +66,15 @@ application :: MVar ServerState -> WS.ServerApp
 application state pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
+    receiveN2O connection
     nextMessage state connection `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException))
     putStrLn "disconnected"
+
+receiveN2O connection = do
+    message    <- WS.receiveDataMessage connection
+    case message of
+        WS.Text "N2O," -> return ()
+        _ -> putStrLn "Protocol violation 3"
 
 sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fromString text) clients
 
@@ -88,7 +91,6 @@ nextMessage state connection = do
 
          WS.Text x
 			 | x == "PING" -> putStrLn "PING" >> loop
-             | x == "N2O," -> putStrLn "N2O handshake" >> loop
              | otherwise  -> do
                 putStrLn "protocol violation 2"
                 print x
@@ -107,13 +109,8 @@ nextMessage state connection = do
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
                     broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
                     return s'
-                -- talk connection state client
           where
              prefix     = "Hi! I am "
              client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
 -}
 
-talk :: WS.Connection -> MVar ServerState -> Client -> IO ()
-talk conn state (user, _) = forever $ do
-     msg <- WS.receiveData conn
-     liftIO $ readMVar state >>= broadcast (user `mappend` ": " `mappend` msg)
