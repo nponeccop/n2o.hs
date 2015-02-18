@@ -24,5 +24,5 @@ Support
 Credits
 -------
 
-Andy Melnikov
-Maxim Sokhatsky
+* Andy Melnikov
+* Maxim Sokhatsky
