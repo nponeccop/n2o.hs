@@ -48,43 +48,33 @@ function onMessage(event) {
         refreshUsers();
     }
 }
+function warning(data)
+{
+    $('#warnings').append(data);
+    ws.close();
+}
+
+function joinSession()
+{
+    $('#join-section').hide();
+    $('#chat-section').show();
+    $('#users-section').show();
+}
 
 $(document).ready(function () {
+
+    $('#message-form').submit(function () {
+        var text = $('#text').val();
+        ws.send(text);
+        $('#text').val('');
+        return false;
+    });
+    ws.onmessage = onMessage; 
+
     $('#join-form').submit(function () {
         $('#warnings').html('');
-        var user = $('#user').val();
-
-        ws.send(enc(tuple(atom('LOGON'),atom(user))))
-
-        ws.onmessage = function(event) {
-            if(event.data.match('^Welcome! Users: ')) {
-                /* Calculate the list of initial users */
-                var str = event.data.replace(/^Welcome! Users: /, '');
-                if(str != "") {
-                    users = str.split(", ");
-                    refreshUsers();
-                }
-
-                $('#join-section').hide();
-                $('#chat-section').show();
-                $('#users-section').show();
-
-                ws.onmessage = onMessage;
-
-                $('#message-form').submit(function () {
-                    var text = $('#text').val();
-                    ws.send(text);
-                    $('#text').val('');
-                    return false;
-                });
-            } else {
-                $('#warnings').append(event.data);
-                ws.close();
-            }
-        };
-
+        ws.send(enc(tuple(atom('LOGON'),atom($('#user').val()))))
         $('#join').append('Connecting...');
-
         return false;
     });
 });

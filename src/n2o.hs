@@ -51,10 +51,13 @@ call fun arg = BL.concat [fun,  "('", arg, "');"]
 
 bar user = encode $ showBERT $ Eval $ call "log" (user `mappend` " joined") `mappend`  call "addUser" user
 
+send connection = WS.sendBinaryData connection . encode . showBERT
+
 logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
     let s' = addClient client s
     print $ map fst s'
-    WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
+    send connection ("joinSession()" :: BL.ByteString)
+    --WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
 	--broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
     return s'
 	-- talk connection state client
