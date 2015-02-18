@@ -50,13 +50,18 @@ sendMessage clients text = broadcastBinary (eval $ call "log" $ fromString text)
 
 nextMessage state connection = do
     let loop = nextMessage state connection 
-    clients    <- readMVar state
     message <- receiveMessage connection
-    case message of
-        [AtomTerm "LOGON", AtomTerm name] 
-            -> logon state (fromString name,connection) >> loop
-        [AtomTerm "MSG", AtomTerm text] -> sendMessage clients text >> loop
-        _ -> putStrLn "Protocol violation"
+    handle connection state loop message
+
+handle connection state loop [AtomTerm "LOGON", AtomTerm name] = logon state (fromString name,connection)
+
+handle connection state loop [AtomTerm "MSG", AtomTerm text]
+    = do
+            clients    <- readMVar state
+            sendMessage clients text
+            loop
+
+handle connection state loop _ = putStrLn "Protocol violation"
 
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
