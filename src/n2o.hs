@@ -1,35 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.BERT (showBERT, BERT(..), Term(..),  showTerm)
-import Data.Binary (encode, decode)
-import Data.Char (isPunctuation, isSpace)
-import Data.Monoid (mappend)
+import Data.BERT (BERT(..), Term(..))
+import Data.Binary (encode)
+-- import Data.Char (isPunctuation, isSpace)
+import Data.Monoid ((<>))
 import Data.String (fromString)
 import Data.Text (Text)
-import Data.Text.Encoding (encodeUtf8)
-import Control.Exception (finally,catch)
-import Control.Monad (forM_, forever)
-import Control.Concurrent (MVar, newMVar, modifyMVar_, modifyMVar, readMVar)
+-- import Control.Exception (catch)
+import Control.Monad (forM_)
+import Control.Concurrent (newMVar, modifyMVar_, readMVar)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import qualified Network.WebSockets as WS
 
-import Network.N2O (application, receiveMessage)
+import Network.N2O (application, receiveMessage, eval)
 
 type ClientState = Text
 type Client = (ClientState, WS.Connection)
 type ServerState = [Client]
-
-data Message
-    = Eval BL.ByteString
-    | KeepAlive -- for illustration only
-
-instance BERT Message where
-    readBERT = error "client.readBERT"
-    showBERT (Eval x) = showBERT x
-    showBERT KeepAlive = NilTerm
 
 --clientExists :: Client -> ServerState -> Bool
 --addClient    :: Client -> ServerState -> ServerState
@@ -48,9 +36,9 @@ foo = BL.writeFile "foo.bert" $ bar "zorro"
 
 call fun arg = BL.concat [fun,  "('", arg, "');"]
 
-bar user = encode $ showBERT $ Eval $ call "log" (user `mappend` " joined") `mappend`  call "addUser" user
+bar user = eval $ call "log" (user <> " joined") <>  call "addUser" user
 
-send connection = WS.sendBinaryData connection . encode . showBERT
+send connection = WS.sendBinaryData connection . eval
 
 logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
     let s' = addClient client s
@@ -63,7 +51,6 @@ logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
 main = do
     state <- newMVar []
     WS.runServer "0.0.0.0" 9160 $ application $ nextMessage state
-
 
 
 sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fromString text) clients

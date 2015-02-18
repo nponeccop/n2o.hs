@@ -3,8 +3,12 @@ module Network.N2O where
 
 import Control.Exception
 import Data.BERT
+import qualified Data.ByteString.Lazy as BL
 import Data.Binary
 import Network.WebSockets as WS
+
+eval :: BL.ByteString -> BL.ByteString
+eval x = encode $ showBERT x
 
 application nextMessage pending = do
     connection <- WS.acceptRequest pending
