@@ -16,6 +16,8 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Network.WebSockets as WS
 
+import Network.N2O (application, receiveMessage)
+
 type ClientState = Text
 type Client = (ClientState, WS.Connection)
 type ServerState = [Client]
@@ -60,21 +62,9 @@ logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
 
 main = do
     state <- newMVar []
-    WS.runServer "0.0.0.0" 9160 $ application state
+    WS.runServer "0.0.0.0" 9160 $ application $ nextMessage state
 
-application :: MVar ServerState -> WS.ServerApp
-application state pending = do
-    connection <- WS.acceptRequest pending
-    putStrLn "accepted"
-    receiveN2O connection
-    nextMessage state connection `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException))
-    putStrLn "disconnected"
 
-receiveN2O connection = do
-    message    <- WS.receiveDataMessage connection
-    case message of
-        WS.Text "N2O," -> return ()
-        _ -> putStrLn "Protocol violation 3"
 
 sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fromString text) clients
 
@@ -88,20 +78,6 @@ nextMessage state connection = do
         [AtomTerm "MSG", AtomTerm text] -> sendMessage clients text >> loop
         _ -> putStrLn "Protocol violation"
 
-receiveMessage connection = do
-    let loop = receiveMessage connection
-    message    <- WS.receiveDataMessage connection
-    putStrLn "message"
-    case message of
-         WS.Binary x -> case decode x of
-			TupleTerm x -> return x
-			_ -> error "Protocol violation"
-
-         WS.Text x
-			 | x == "PING" -> putStrLn "PING" >> loop
-             | otherwise  -> do
-                print x
-                error "protocol violation 2"
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
                 WS.sendTextData connection ("Wrong announcement" :: Text)
