@@ -80,20 +80,28 @@ sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fro
 
 nextMessage state connection = do
     let loop = nextMessage state connection 
+    clients    <- liftIO $ readMVar state
+    message <- receiveMessage connection
+    case message of
+        [AtomTerm "LOGON", AtomTerm name] 
+            -> logon state (fromString name,connection) >> loop
+        [AtomTerm "MSG", AtomTerm text] -> sendMessage clients text >> loop
+        _ -> putStrLn "Protocol violation"
+
+receiveMessage connection = do
+    let loop = receiveMessage connection
     message    <- WS.receiveDataMessage connection
     putStrLn "message"
-    clients    <- liftIO $ readMVar state
     case message of
          WS.Binary x -> case decode x of
-			TupleTerm [AtomTerm "LOGON", AtomTerm name] -> logon state (fromString name,connection) >> loop
-			TupleTerm [AtomTerm "MSG", AtomTerm text] -> sendMessage clients text >> loop
-			_ -> putStrLn "Protocol violation"
+			TupleTerm x -> return x
+			_ -> error "Protocol violation"
 
          WS.Text x
 			 | x == "PING" -> putStrLn "PING" >> loop
              | otherwise  -> do
-                putStrLn "protocol violation 2"
                 print x
+                error "protocol violation 2"
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
                 WS.sendTextData connection ("Wrong announcement" :: Text)
