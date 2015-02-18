@@ -62,7 +62,7 @@ $(document).ready(function () {
     $('#join-form').submit(function () {
         $('#warnings').html('');
         var user = $('#user').val();
-        var ws = createWebSocket('/');
+//        var ws = createWebSocket('/');
 
         ws.onopen = function() {
             ws.send('Hi! I am ' + user);

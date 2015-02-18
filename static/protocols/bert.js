@@ -173,8 +173,9 @@ var $bert = {};
 
 $bert.on = function onbert(evt, callback) // BERT formatter
 {
-    //    console.log("Bert On");
-    
+    console.log("Bert On");
+    console.log(evt.data);
+
     // Check for FileReader.readAsArrayBuffer()
     if(Blob.prototype.isPrototypeOf(evt.data) && (evt.data.length > 0 || evt.data.size > 0)) {
         var reader = new FileReader();
