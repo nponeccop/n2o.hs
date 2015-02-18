@@ -5,6 +5,7 @@ import Data.Binary (encode)
 import Data.Char (isPunctuation, isSpace)
 import Data.Monoid (mappend)
 import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import Control.Exception (finally)
 import Control.Monad (forM_, forever)
 import Control.Concurrent (MVar, newMVar, modifyMVar_, modifyMVar, readMVar)
@@ -40,6 +41,9 @@ broadcast    message clients = do
     T.putStrLn message
     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
+broadcastBinary message clients = do
+    forM_ clients $ \(_, conn) -> WS.sendBinaryData conn message
+
 foo = BL.writeFile "foo.bert" $ bar "zorro"
 
 call fun arg = BL.concat [fun,  "('", arg, "');"]
@@ -70,8 +74,7 @@ application state pending = do
                 liftIO $ modifyMVar_ state $ \s -> do
                     let s' = addClient client s
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
-                    WS.sendBinaryData connection $ bar "zorro"
-                    broadcast (fst client `mappend` " joined") s'
+                    broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
                     return s'
                 talk connection state client
           where

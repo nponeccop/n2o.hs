@@ -16,7 +16,7 @@ function refreshUsers() {
     }
 }
 
-function pushUser(user)
+function addUser(user)
 {
     users.push(user);
     refreshUsers();
@@ -49,12 +49,6 @@ function onMessage(event) {
 
     $('#messages').append(p);
     $('#messages').animate({scrollTop: $('#messages')[0].scrollHeight});
-
-    if(event.data.match(/^[^:]* joined/)) {
-        var user = event.data.replace(/ .*/, '');
-        users.push(user);
-        refreshUsers();
-    }
 
     if(event.data.match(/^[^:]* disconnected/)) {
         var user = event.data.replace(/ .*/, '');
