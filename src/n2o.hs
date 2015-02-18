@@ -41,8 +41,8 @@ broadcast    message clients = do
     T.putStrLn message
     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
-broadcastBinary message clients = do
-    forM_ clients $ \(_, conn) -> WS.sendBinaryData conn message
+broadcastBinary message clients 
+	= forM_ clients $ \(_, conn) -> WS.sendBinaryData conn message
 
 foo = BL.writeFile "foo.bert" $ bar "zorro"
 
@@ -60,7 +60,9 @@ application state pending = do
     message    <- WS.receiveDataMessage connection
     clients    <- liftIO $ readMVar state
     case message of
-         WS.Binary x -> putStrLn $ showTerm $ decode x
+         WS.Binary x -> case decode x of
+			TupleTerm x -> print x
+			_ -> putStrLn "Protocol violation"
          WS.Text x
 			 | x == "PING" -> putStrLn "PING" 
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
