@@ -55,7 +55,8 @@ $(document).ready(function () {
         var user = $('#user').val();
 
         ws.onopen = function() {
-            ws.send('Hi! I am ' + user);
+//           ws.send('Hi! I am ' + user);
+            ws.send(enc(tuple(atom('LOGON'),atom(user))))
         };
 
         ws.onmessage = function(event) {

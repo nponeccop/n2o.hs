@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.BERT (showBERT, BERT(..), Term(..))
-import Data.Binary (encode)
+import Data.BERT (showBERT, BERT(..), Term(..),  showTerm)
+import Data.Binary (encode, decode)
 import Data.Char (isPunctuation, isSpace)
 import Data.Monoid (mappend)
 import Data.Text (Text)
@@ -60,8 +60,9 @@ application state pending = do
     message    <- WS.receiveDataMessage connection
     clients    <- liftIO $ readMVar state
     case message of
-         WS.Binary x -> T.putStrLn (WS.fromLazyByteString x)
+         WS.Binary x -> putStrLn $ showTerm $ decode x
          WS.Text x
+			 | x == "PING" -> putStrLn "PING" 
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
                 WS.sendTextData connection ("Wrong announcement" :: Text)
              | any ($ fst client) [T.null, T.any isPunctuation, T.any isSpace] ->
@@ -76,7 +77,7 @@ application state pending = do
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
                     broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
                     return s'
-                talk connection state client
+                -- talk connection state client
           where
              prefix     = "Hi! I am "
              client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
