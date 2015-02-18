@@ -9,11 +9,10 @@ import Data.Text (Text)
 -- import Control.Exception (catch)
 import Control.Monad (forM_)
 import Control.Concurrent (newMVar, modifyMVar_, readMVar)
-import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy as BL
 import qualified Network.WebSockets as WS
 
-import Network.N2O (application, receiveMessage, eval)
+import Network.N2O
 
 type ClientState = Text
 type Client = (ClientState, WS.Connection)
@@ -32,18 +31,12 @@ removeClient client          = filter ((/= fst client) . fst)
 broadcastBinary message clients 
 	= forM_ clients $ \(_, conn) -> WS.sendBinaryData conn message
 
-foo = BL.writeFile "foo.bert" $ bar "zorro"
-
-call fun arg = BL.concat [fun,  "('", arg, "');"]
-
 bar user = eval $ call "log" (user <> " joined") <>  call "addUser" user
 
-send connection = WS.sendBinaryData connection . eval
-
-logon state client @ (bar, connection)  = liftIO $ modifyMVar_ state $ \s -> do
+logon state client @ (bar, connection)  = modifyMVar_ state $ \s -> do
     let s' = addClient client s
     print $ map fst s'
-    send connection ("joinSession()" :: BL.ByteString)
+    send connection "joinSession()"
     --WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
     return s'
 	-- talk connection state client
@@ -53,11 +46,11 @@ main = do
     WS.runServer "0.0.0.0" 9160 $ application $ nextMessage state
 
 
-sendMessage clients text = broadcastBinary (encode $ showBERT $ call "log" $ fromString text) clients
+sendMessage clients text = broadcastBinary (eval $ call "log" $ fromString text) clients
 
 nextMessage state connection = do
     let loop = nextMessage state connection 
-    clients    <- liftIO $ readMVar state
+    clients    <- readMVar state
     message <- receiveMessage connection
     case message of
         [AtomTerm "LOGON", AtomTerm name] 

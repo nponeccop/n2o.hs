@@ -10,6 +10,8 @@ import Network.WebSockets as WS
 eval :: BL.ByteString -> BL.ByteString
 eval x = encode $ showBERT x
 
+call fun arg = BL.concat [fun,  "('", arg, "');"]
+
 application nextMessage pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
@@ -38,3 +40,4 @@ receiveMessage connection = do
                 print x
                 error "protocol violation 2"
 
+send connection = WS.sendBinaryData connection . eval
