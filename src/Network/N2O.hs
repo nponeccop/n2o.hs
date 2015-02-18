@@ -19,6 +19,16 @@ application nextMessage pending = do
     nextMessage connection `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException))
     putStrLn "disconnected"
 
+simple ip port handle = WS.runServer ip port $ application $ nextMessage handle
+
+
+nextMessage handle connection = do
+    let loop = nextMessage handle connection 
+    message <- receiveMessage connection
+    handle connection loop message
+
+--simpleApp x = application simpleLoop x 
+
 receiveN2O connection = do
     message    <- WS.receiveDataMessage connection
     case message of

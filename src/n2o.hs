@@ -43,25 +43,19 @@ logon state client @ (bar, connection)  = modifyMVar_ state $ \s -> do
 
 main = do
     state <- newMVar []
-    WS.runServer "0.0.0.0" 9160 $ application $ nextMessage state
-
+    simple  "0.0.0.0" 9160 $ handle state
 
 sendMessage clients text = broadcastBinary (eval $ call "log" $ fromString text) clients
 
-nextMessage state connection = do
-    let loop = nextMessage state connection 
-    message <- receiveMessage connection
-    handle connection state loop message
-
-handle connection state loop [AtomTerm "LOGON", AtomTerm name] = logon state (fromString name,connection)
-
-handle connection state loop [AtomTerm "MSG", AtomTerm text]
+handle state connection loop [AtomTerm "LOGON", AtomTerm name] = logon state (fromString name,connection)
+        
+handle state connection loop [AtomTerm "MSG", AtomTerm text]
     = do
             clients    <- readMVar state
             sendMessage clients text
             loop
 
-handle connection state loop _ = putStrLn "Protocol violation"
+handle state connection loop _ = putStrLn "Protocol violation"
 
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
