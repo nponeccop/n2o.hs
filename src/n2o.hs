@@ -7,7 +7,7 @@ import Data.Monoid (mappend)
 import Data.String (fromString)
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
-import Control.Exception (finally)
+import Control.Exception (finally,catch)
 import Control.Monad (forM_, forever)
 import Control.Concurrent (MVar, newMVar, modifyMVar_, modifyMVar, readMVar)
 import Control.Monad.IO.Class (liftIO)
@@ -67,7 +67,7 @@ application :: MVar ServerState -> WS.ServerApp
 application state pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
-    nextMessage state connection
+    nextMessage state connection `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException))
     putStrLn "disconnected"
 
 nextMessage state connection = do
