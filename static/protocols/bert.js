@@ -190,3 +190,25 @@ $bert.on = function onbert(evt, callback) // BERT formatter
     }
     else  { return { status: "error", desc: "not Bert" }; }
 };
+
+$bert.do = function dobert(x)
+{
+    if (typeof x == 'string')
+    {
+        eval(x)
+    }
+    else if (typeof x == 'object'
+        && x.type == 'Tuple'
+        && x.value[0].length == 3
+        && x.value[0][0] == 'io')
+    {
+        var foo = x.value[0]
+        var data = foo[1]
+        eval(foo[2])
+    }
+    else
+    {
+        alert("Unknown x of " + typeof x)
+        console.log(x)
+    }
+};
