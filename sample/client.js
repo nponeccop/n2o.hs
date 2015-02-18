@@ -34,18 +34,10 @@ function onMessage(event) {
                 alert("Unknown x of " + typeof x)
             }
         })
-        return
     }
-    var p = $(document.createElement('p')).text(event.data);
-
-    $('#messages').append(p);
-    $('#messages').animate({scrollTop: $('#messages')[0].scrollHeight});
-
-    if(event.data.match(/^[^:]* disconnected/)) {
-        var user = event.data.replace(/ .*/, '');
-        var idx = users.indexOf(user);
-        users = users.slice(0, idx).concat(users.slice(idx + 1));
-        refreshUsers();
+    else
+    {
+        alert("Non-blob data")
     }
 }
 function warning(data)
@@ -64,8 +56,7 @@ function joinSession()
 $(document).ready(function () {
 
     $('#message-form').submit(function () {
-        var text = $('#text').val();
-        ws.send(text);
+        ws.send(enc(tuple(atom('MSG'),atom($('#text').val()))))
         $('#text').val('');
         return false;
     });
