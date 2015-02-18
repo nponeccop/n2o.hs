@@ -40,9 +40,11 @@ broadcast    message clients = do
     T.putStrLn message
     forM_ clients $ \(_, conn) -> WS.sendTextData conn message
 
-foo = BL.writeFile "foo.bert" bar
+foo = BL.writeFile "foo.bert" $ bar "zorro"
 
-bar = encode $ showBERT $ Eval "log('Hello weaklings!')"
+call fun arg = BL.concat [fun,  "('", arg, "');"]
+
+bar user = encode $ showBERT $ Eval $ call "log" (user `mappend` " joined") `mappend`  call "addUser" user
 
 main = do
     state <- newMVar []
@@ -68,7 +70,7 @@ application state pending = do
                 liftIO $ modifyMVar_ state $ \s -> do
                     let s' = addClient client s
                     WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
-                    WS.sendBinaryData connection bar
+                    WS.sendBinaryData connection $ bar "zorro"
                     broadcast (fst client `mappend` " joined") s'
                     return s'
                 talk connection state client
