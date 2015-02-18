@@ -16,6 +16,19 @@ function refreshUsers() {
     }
 }
 
+function pushUser(user)
+{
+    users.push(user);
+    refreshUsers();
+}
+
+function log(data)
+{
+    var p = $(document.createElement('p')).text(data);
+    $('#messages').append(p);
+    $('#messages').animate({scrollTop: $('#messages')[0].scrollHeight});
+}
+
 function onMessage(event) {
     if (event.data instanceof Blob)
     {

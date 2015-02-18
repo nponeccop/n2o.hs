@@ -42,7 +42,7 @@ broadcast    message clients = do
 
 foo = BL.writeFile "foo.bert" bar
 
-bar = encode $ showBERT $ Eval "alert('Hello weaklings!')"
+bar = encode $ showBERT $ Eval "log('Hello weaklings!')"
 
 main = do
     state <- newMVar []
