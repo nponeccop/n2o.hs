@@ -14,7 +14,7 @@ Idea
 ----
 
 Small and efficient protocol stack with endpoint formatters having
-session storage with select for pubsub.
+session storage with select for pubsub. The protocol is binary compatible with original N2O protocol: https://synrc.com/apps/n2o/doc/web/protocols.htm
 
 Support
 -------
