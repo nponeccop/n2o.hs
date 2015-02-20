@@ -45,6 +45,29 @@
 
   <div class="p">Maxim Sokhatsky <a href="#">maxim@synrc.com</a>.</div>
 
+<h3>TOC</h3>
+
+<a href="#">Client Events</a>
+<ul><li>HEART</li>
+    <li>CLIENT</li>
+    <li>BIN</li>
+    <li>DIRECT</li>
+    <li>PICKLE</li>
+    <li>EV</li>
+</ul>
+<a href="#">Server Events</a>
+<ul><li>IO</li>
+    <li>SERVER</li>
+    <li>BINARY</li>
+    <li>[]</li>
+</ul>
+<a href="#">Server Structures</a>
+<ul><li>CX</li>
+    <li>HANDLER</li>
+    <li>ELEMENT</li>
+    <li>ACTION</li>
+</ul>
+
 <h3>Client Events</h3>
 
 <h4>HEART Events</h4>
@@ -82,10 +105,10 @@ Erlang:
 {client,_}
 </pre>
 
-<h4>EV Events</h2>
+<h4>PICKLE Events</h2>
 
 This kind of events are RPC message calls to <code>module</code> and <code>function</code>.
-EV events are being sent pickled by server side picklers.
+PICKLE events are being sent pickled by server side picklers.
 N2O supports following picklers:
 
 <ul><li>PLAIN binary BERT encoding of the event or</li>
@@ -93,14 +116,31 @@ N2O supports following picklers:
 
 JavaScript:
 <pre>
-JS> enc(tuple(atom('ev'),atom('deposits'),
-                     tuple(atom('error'),"6187"),
-                     atom('#next'),
-                     atom('event')));
-
-      ERL> {ev,deposits,{error,"6189"},'#next',event}
-
+JS> enc(tuple(atom('pickle'),
+              atom('deposits'),
+              tuple(atom('ev'),
+                    atom('deposits'),
+                    tuple(atom('error'),'6189'),
+                    atom('#next'),
+                    atom('event')),
+              [tuple(atom('user'),'maxim'),
+               tuple(atom('pass'),'token')]);
 </pre>
+
+Erlang:
+<pre>
+{pickle,_,_,_}
+
+      ERL> {pickle,deposits,
+                   {ev,deposits,
+                       {error,"6189"},
+                       '#next',
+                       event},
+                   [{user,<<"maxim">>},
+                    {pass,<<"token">>}].
+</pre>
+
+<h4>EV Pickled Events</h2>
 
 Haskell:
 <pre>
