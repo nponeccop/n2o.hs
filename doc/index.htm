@@ -1,0 +1,330 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <meta name="author" content="Maxim Sokhatsky" />
+    <title>N2O</title>
+    <link rel="stylesheet" href="5HT.css" />
+</head>
+<body>
+<div class=menu>
+<a href="index.html">articles</a>
+</div>
+<hr>
+<div class=app>
+
+<div class=message>
+
+<div align=right>FROM: 5HT<br>
+                   TO: #N2O<br>
+                 DATE: 1 MAR 2015</div>
+
+<h2>N2O WebSocket Protocol</h2>
+
+<h3>Protocols, Messages and Formatters</h3>
+
+<p>If you put regular JSON on the wire sooner or later you will discover
+your own wire protocol. Here is description of our N2O binary precise protocol.
+N2O also has ASN.1 formal description, however here we will speak on it freely.</p>
+
+<p>The only thing I want to add is that N2O protocol was created
+naturally with niminal efforts, all modifications were
+applied targetly and atomically. The current version of the protocol 2.3
+is totally compatible with earlier versions up to 1.5
+the <b>synrc/games</b> version, which was very progressive at the time.
+Versions prior to 1.5 had very basic and naive but stable and fast
+implementation of the core. All N2O releases are known to be stable
+and supported half-year back. The evolution of the protocol is open
+for a deeper discussion with interested party or protocol users.</p>
+
+<p>You may find N2O protocol similar to extensible XML-based XMPP,
+BINARY-based COM/CORBA and/or JSON-based WAMP; but most closer it
+is to BERT-RPC binary-based protocol introduced by the GitHub.
+N2O protocol is formatter agnostic and it doesn't strict you
+to use a particular encoder/decoder.
+N2O protocol has its own reference implementation in Erlang
+which is widely used in production applications.
+And experimental implementation in Haskell which is also using BERT formatter.
+N2O provides definition support for several unoverlapped sub-protocols.
+There is no single system shipped to support all of them but it could
+exist theoretically.</p>
+
+<!--ul><b><li>heart</li>
+    <li>spa</li>
+    <li>bin</li>
+    <li>nitrogen</li>
+    <li>bpe</li>
+    <li>roster</li>
+    <li>muc</li>
+    <li>rest</li></b></ul-->
+
+<p><center>Picture 1. Protocol Modules<br><br><img src="img/protocols.svg" width=500></center><br></p>
+
+<p>N2O should not define any particular set of formatters.
+Application developers could choose their own formatter per protocol.
+E.g. N2O uses TEXT formatting for <<"PING">> and <<"N2O,">> protocol
+messages, across versions N2O used to have IO message formatted with JSON and BERT both.
+All other protocol messages were BERT from origin. The only thing is that protocol
+formatter should be specified somehow.</p>
+
+<ul><li>TEXT</li>
+    <li>JSON</li>
+    <li>XML</li>
+    <li>BERT</li>
+    <li>MessagePack</li></ul>
+
+<p>All this formattes format message which comes directly to TCP WebSocket.
+However there are some endpoints which are not TCP sockets, even non-sockets,
+like gen_server endpoint, HTTP REST endpoint, which is non-WebSocket endpoint,
+and there is a room for other endpoint types. Here is a list of types of
+endpoints which arise in multi-protocol discussions:
+</p>
+
+<ul><li>gen_server</li>
+    <li>ws</li>
+    <li>http</li></ul>
+
+<h3>Core</h3>
+
+<p>The core protocols shipped with N2O provide very basic but yet
+powerful functionality such as reconnects, page initialization
+and common client/server messaging. The core is enough for
+binary upload/download, games construction and SPA applications.</p>
+
+<h4>heart</h4>
+
+<p>The heart protocol defined client originated messages N2O, PING and
+server originated messages IO and NOP. IO message contains EVAL that
+contains UTF-8 JavaScript string and DATA reply contains any binary string.
+"PING" and "N2O," are defined as text 4-bytes messages and second could be
+followed by any text string. NOP is 0-byte acknowledging packet. This is
+heart essence protocol which is enough for any rpc and code
+transfering interface. Normally heart protocol is not for active
+client usage but for supporting active connection with notifications
+and possibly DOM updates.</p>
+
+<div class=note style="width:600px;"><pre>1. IO tuple {io,EVAL,DATA}
+2. NOP <<>>
+3. N2O init marker <<"N2O,",AttachSession/binary>>
+4. PING message <<"PING">>
+</pre></div>
+
+<br>
+<p>Heartbeat protocol is essential WebSocket application
+level protocol for PING and N2O initialization. It pings
+every 4-5 seconds from client-side to server thus allowing
+to determine client online presence. On reconnection or
+initial connect client sends N2O init marker telling to
+server to reinitialize the context.</p>
+
+<div class=note style="width:220px;"><pre>ws.send('PING');
+ws.send('N2O,');
+</pre></div>
+
+<br>
+<p>IO events are containers for data and codata.
+Third element of a tuple will be directly evaluated in WebBrowser.
+IO events are normally not constructed on client.</p>
+
+<blockquote>Haskell:</blockquote>
+<div class=note><pre>
+TupleTerm [AtomTerm "io", BinaryTerm data, BinaryTerm eval]
+</pre></div>
+
+<blockquote>Erlang:</blockquote>
+<div class=note style="width:150px;"><pre>
+{io,_,_}
+</pre></div>
+
+<h4>spa</h4>
+
+<p>The spa protocol defined client originated messages CLIENT, SERVER and
+server originated messages SERVER, IO and NOP. This protocol should be used
+for normal data transfer as enveloping protocol. Client and server DATA
+message should be specified for both server and client.</p>
+
+<div class=note style="width:400px;"><pre>5. CLIENT tuple {client,DATA}
+6. SERVER tuple {server,DATA}
+</pre></div>
+
+<br>
+<p>Client messages usually originated at client and
+represent the Client API Requests:</p>
+
+<blockquote>JavaScript:</blockquote>
+<div class=note style="width:550px;"><pre>
+ws.send(enc(tuple(
+      atom('client'),
+      tuple(atom('join_game'),1000001))));
+</pre></div>
+
+
+<blockquote>Haskell:</blockquote>
+<div class=note style="width:550px;"><pre>
+TupleTerm [AtomTerm "client", Term body]</pre></div>
+
+<blockquote>Erlang:</blockquote>
+<p><div class=note style="width:150px;"><pre>
+{client,_}</pre></div></p>
+
+<h4>bin</h4>
+
+<p>The bin protocol defined client originated messages BIN and
+server originated messages BINARY and NOP. This protocol part is
+dedicated to huge file transfers in binary form.</p>
+
+<div class=note><pre>7. BIN tuple {bin,DATA}
+8. BINARY tuple {binary,_,_,_,_,_,_,_,_,_,_}
+</pre></div>
+
+<h3>Extensions</h3>
+
+<p>N2O protocol is not something statically defined. It contains
+unintersected protocol sections, each defines its own complete
+part of functionality. You may extend the protocol sections by
+implementing you own protocol with its own envelop formatter.</p>
+
+<h4>nitrogen</h4>
+
+<p>The nitrogen protocol defined client originated messages PICKLE/EV and
+server originated messages IO and NOP. This is something taken with
+historicaly reasons and roots in Rusty's Nitrogen Web Framework. This
+framework is transfering RPC events to page controllers though pickle
+envelop, which could also provide ciphering. N2O supports AES/CBC cypher.
+</p>
+
+<div class=note><pre>9. PICKLE tuple {pickle,_,_,_}
+10. EV tuple {ev,_,_,_,_}
+</pre></div>
+
+<br><p>You may think of nitrogen as a RPC secured protocol. If is very
+handy in enterprise to use FORMS with N2O application server,
+in those cases we use nitrogen as RPC protocol with nitogen-compatible pages.</p>
+
+<blockquote>JavaScript:</blockquote>
+<div class=note><pre>
+JS> enc(tuple(atom('pickle'),
+              atom('deposits'),
+              tuple(atom('ev'),
+                    atom('deposits'),
+                    tuple(atom('error'),'6189'),
+                    atom('#next'),
+                    atom('event')),
+              [tuple(atom('user'),'maxim'),
+               tuple(atom('pass'),'token')]);
+</pre></div>
+
+<blockquote>Erlang:</blockquote>
+<div class=note><pre>
+{pickle,_,_,_}
+
+      ERL> {pickle,deposits,
+                   {ev,deposits,
+                       {error,"6189"},
+                       '#next',
+                       event},
+                   [{user,<<"maxim">>},
+                    {pass,<<"token">>}].
+</pre></div>
+
+<br>
+<p>PICKLE events are being sent pickled by server side picklers.
+N2O supports following picklers:
+
+<ul><li>PLAIN binary BERT encoding of the event or</li>
+<li>AES/CBC encrypted event for sensitive information about the API.</li></ul></p>
+
+<p>EV message contains RPC specification: target module,
+originated module, event arguments and name of controller
+function, for nitrogen the default type is <b>event</b>.</p>
+
+<blockquote>Haskell:</blockquote>
+<div class=note><pre>
+TupleTerm [AtomTerm "ev", AtomTerm to, Term body,
+                          AtomTerm from, AtomTerm type]
+</pre></div>
+
+<blockquote>Erlang:</blockquote>
+<div class=note><pre>
+{ev,_,_,_,_}
+</pre></div>
+
+<h4>mq</h4>
+
+<p>The mq protocol defined client originated messages SUB, UNSUB, PUB, SUSPEND, RESUME
+and server originated messages MSG.</p>
+
+<div class=note><pre>11. SUB tuple {sub,NAME,OPTIONS}
+12. UNSUB tuple {unsub,NAME}
+13. PUB tuple {pub,NAME,DATA}
+14. SUSPEND tuple {suspend,NAME}
+15. RESUME tuple {suspend,NAME}
+16. MSG tuple {msg,FROM,TO,DATA}
+</pre></div>
+
+<h4>bpe</h4>
+
+<p>The bpe protocol defined client originated messages
+GET, COMPLETE, RUN, UNTIL, AMEND, EVENT and ANY server originated
+messages.</p>
+
+<p><div class=note><pre>17. GET {get}
+18. RUN {run}
+19. UNTIL {until,Task}
+20. EVENT {event,Event}
+21. AMEND 2-tuple {amend,Form}
+          3-tuple {amend,Form,true}
+22. COMPLETE 1-tuple {complete}
+             2-tuple {complete,Stage}
+23. PROCESS 15-tuple
+24. START
+</pre></div>
+
+<h4>roster</h4>
+
+<p>The roster protocol defined client originated messages AUTH, ADD, CONFIRM,
+CREATE, JOIN, MESSAGE, TYPING,  and server originated messages PERSON,
+PRESENCE.</p>
+
+<p><div class=note><pre>25. AUTH {auth,USER,TOKEN,SERVICES}
+26. PERSON {person,ID,NAMES,SURNAMES,STATUS}
+27. PRESENCE {presence,SIZE,USERS}
+28. FRIEND {friend,USER,STATUS}
+29. CONFIRM {confirm,USER,TYPE}
+30. PRIVATE {message,ID,AUTHOR,BODY,STATUS}
+31. TYPING {typing,AUTHOR}
+</pre></div></p>
+
+<h4>muc</h4>
+
+<p>The multi-user chat protocol defined client originated messages JOIN, PUBLIC
+and server originated messages ROOM, PUBLIC.</p>
+
+<p><div class=note><pre>
+32. ROOM {room,ID,NAME}
+33. PUBLIC {public,ID,AUTHOR,ROOM,BODY,STATUS}
+34. JOIN {join,USER,ROOM,ANSWER}
+</pre></div></p>
+
+<h4>rest</h4>
+
+<p>The rest protocol defined client originated HTTP messages PUT, GET, OPTIONS, DELETE
+and server originated ANY messages formatted with JSON. This protocol is
+slightly differs and is not WebSocket protocol but HTTP endpoint protocol
+provided by <b>rest</b> library and <b>kvs</b> abstract database.</p>
+
+<p><div class=note><pre>
+33. GET {get,Resource}
+        {get,Resource,Id}
+34. PUT {put,Resource,Object}
+35. DELETE {delete,Resource,Id}
+35. OPTIONS {options,Resource}
+</pre></div></p>
+
+</div>
+</div>
+
+</body>
+</html>
