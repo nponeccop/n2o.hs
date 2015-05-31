@@ -1,43 +1,31 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
 
-import Data.BERT (BERT(..), Term(..))
-import Data.Binary (encode)
--- import Data.Char (isPunctuation, isSpace)
+module Main (main) where
+import Data.BERT (Term(..))
 import Data.Monoid ((<>))
 import Data.String (fromString)
-import Data.Text (Text)
--- import Control.Exception (catch)
-import Control.Monad (forM_, liftM)
-import Control.Concurrent (newMVar, modifyMVar_, readMVar)
-import qualified Data.ByteString.Lazy as BL
+import Control.Monad (forM_)
+import Control.Concurrent (newMVar, modifyMVar, readMVar)
 import qualified Network.WebSockets as WS
 
 import Network.N2O
 import Network.N2O.PubSub
 import Data.IxSet as I
 
-type ClientState = Text
-type Client = Entry
-type ServerState = IxSet Client
-
-clientExists :: () -> Bool
-clientExists client = error "aaa" -- M.member (fst client)
-addClient    client = error "bbb" -- uncurry M.insert
-removeClient client = error "ccc" -- M.delete (fst client)
 
 broadcastBinary message clients 
     = forM_ clients $ \(Entry {eConn}) -> WS.sendBinaryData eConn message
 
-bar user = eval $ call "log" (user <> " joined") <>  call "addUser" user
-
-justLog = eval . call "log"
+-- bar user = eval $ call "log" (user <> " joined") <>  call "addUser" user
 
 logon state client = do 
-    modifyMVar_ state $ return . subscribe client
-    WS.sendBinaryData (eConn client) $ eval $ call "log" "ahaha" <> call "joinSession" ""
+    socketId <- modifyMVar state $ return . subscribe client
+    print socketId
+    WS.sendBinaryData client $ eval $ call "log" "ahaha" <> call "joinSession" ""
 
     --WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
     -- talk connection state client
+    --
 
 main = do
     state <- newMVar newChannel
@@ -48,15 +36,17 @@ main = do
 
 sendMessage clients text = broadcastBinary (eval $ call "log" $ fromString text) clients
 
-handle state connection loop [AtomTerm "LOGON", AtomTerm name] = logon state (Entry (Just $ fromString name) All connection) >> loop
+handle state connection loop [AtomTerm "LOGON", AtomTerm name] 
+    = logon state connection >> loop where
+        foo = Just $ fromString name
         
-handle state connection loop [AtomTerm "MSG", AtomTerm text]
+handle state _connection loop [AtomTerm "MSG", AtomTerm text]
     = do
-            clients    <- toList <$> readMVar state
+            clients    <- toList . coSet <$> readMVar state
             sendMessage clients text
             loop
 
-handle state connection loop _ = putStrLn "Protocol violation"
+handle _state _connection _loop _ = putStrLn "Protocol violation"
 
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->

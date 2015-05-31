@@ -1,7 +1,7 @@
-{-# LANGUAGE NoMonomorphismRestriction, DeriveDataTypeable, StandaloneDeriving  #-}
+{-# LANGUAGE NoMonomorphismRestriction, DeriveDataTypeable, StandaloneDeriving, NamedFieldPuns  #-}
 module Network.N2O.PubSub where
 
-import Data.Data (Data, gfoldl, gunfold, toConstr, dataTypeOf)
+import Data.Data (Data, gunfold, toConstr, dataTypeOf)
 import Data.IxSet as I
 import Network.WebSockets as WS
 
@@ -16,13 +16,13 @@ instance Data Connection where
     toConstr =  error "WS.Connection toConstr is unimplemented in PubSub.hs"
     dataTypeOf = unimpl "WS.Connection dataTypeOf"
 
-data Foo  = Foo Int | All deriving (Ord, Eq, Show, Typeable, Data)
+--data Foo  = Foo Int | All deriving (Ord, Eq, Show, Typeable, Data)
 
-data Entry = Entry { eUser :: Maybe String, eFoo :: Foo, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
+data Entry = Entry { eUser :: Maybe String, eSocketId :: SocketId, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
 
 instance Indexable Entry where
     empty = ixSet
-        [ ixGen (Proxy :: Proxy Foo)
+        [ ixGen (Proxy :: Proxy SocketId)
         , ixGen (Proxy :: Proxy String)
         ]
 
@@ -35,15 +35,24 @@ instance Ord Connection where
 instance Show Connection where
     show = const "{WS.Connection}"
 
-e a = Entry a All
+type SocketId = Int
 
-newChannel :: IxSet Entry
-newChannel = I.empty
+data Connections = Connections { coSet :: IxSet Entry, coId :: SocketId }
 
-subscribe = I.insert 
 
-unsubscribe = I.deleteIx 
+initialId :: SocketId
+initialId = 0
 
-broadcast = I.toList . getEQ All
+nextId :: SocketId -> SocketId
+nextId = succ
+
+newChannel :: Connections
+newChannel = Connections I.empty initialId
+
+subscribe :: WS.Connection -> Connections -> (Connections, SocketId)
+subscribe conn (Connections {coSet, coId}) = (Connections {
+	coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
+
+unsubscribe = I.deleteIx
 
 
