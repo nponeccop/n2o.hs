@@ -7,6 +7,8 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Binary
 import Data.Monoid ((<>))
 import Network.WebSockets as WS
+import Control.Concurrent
+import Network.N2O.PubSub
 
 eval :: BL.ByteString -> BL.ByteString
 eval x = encode $ TupleTerm [AtomTerm "io", NilTerm, showBERT x]
@@ -15,12 +17,15 @@ call fun arg = BL.concat [fun,  "('", arg, "');"]
 
 call0 fun = fun <> "()"
 
-application nextMessage pending = do
+application nextMessage state pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
-    receiveN2O connection
-    nextMessage connection `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
-    putStrLn "disconnected"
+    socketId <- modifyMVar state $ return . subscribe connection
+    putStrLn $ "Connected socketId = " ++ show socketId
+
+    (receiveN2O connection >> nextMessage connection) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
+    putStrLn $ "Disconnected socketId = " ++ show socketId
+    modifyMVar_ state $ return . unsubscribe socketId
 
 somecatch :: SomeException -> IO ()
 somecatch e = print "SomeException" >> print e
@@ -28,7 +33,7 @@ somecatch e = print "SomeException" >> print e
 iocatch :: IOException -> IO ()
 iocatch _ = print "IOException"
 
-simple ip port handle = WS.runServer ip port $ application $ nextMessage handle
+simple ip port handle state = WS.runServer ip port $ application (nextMessage $ handle state) state
 
 
 nextMessage handle connection = do

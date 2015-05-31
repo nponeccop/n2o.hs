@@ -23,7 +23,7 @@ data Entry = Entry { eUser :: Maybe String, eSocketId :: SocketId, eConn :: WS.C
 instance Indexable Entry where
     empty = ixSet
         [ ixGen (Proxy :: Proxy SocketId)
-        , ixGen (Proxy :: Proxy String)
+        , ixGen (Proxy :: Proxy (Maybe String))
         ]
 
 instance Eq Connection where
@@ -53,6 +53,7 @@ subscribe :: WS.Connection -> Connections -> (Connections, SocketId)
 subscribe conn (Connections {coSet, coId}) = (Connections {
 	coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
 
-unsubscribe = I.deleteIx
+unsubscribe :: SocketId -> Connections -> Connections
+unsubscribe socketId (co @ Connections { coSet }) = co { coSet = I.deleteIx socketId coSet }
 
 

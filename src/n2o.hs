@@ -18,10 +18,7 @@ broadcastBinary message clients
 
 -- bar user = eval $ call "log" (user <> " joined") <>  call "addUser" user
 
-logon state client = do 
-    socketId <- modifyMVar state $ return . subscribe client
-    print socketId
-    WS.sendBinaryData client $ eval $ call "log" "ahaha" <> call "joinSession" ""
+logon state client = WS.sendBinaryData client $ eval $ call "log" "ahaha" <> call "joinSession" ""
 
     --WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
     -- talk connection state client
@@ -30,7 +27,7 @@ logon state client = do
 main = do
     state <- newMVar newChannel
     putStrLn "Started"
-    simple  "0.0.0.0" 9160 $ handle state
+    simple  "0.0.0.0" 9160 handle state
     print "ok"
 
 
