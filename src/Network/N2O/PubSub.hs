@@ -27,10 +27,10 @@ instance Indexable Entry where
         ]
 
 instance Eq Connection where
-    (==) = undefined
+    (==) = unimpl "(==)"
 
 instance Ord Connection where
-    compare = undefined
+    compare _ _ = EQ
 
 instance Show Connection where
     show = const "{WS.Connection}"
@@ -51,7 +51,7 @@ newChannel = Connections I.empty initialId
 
 subscribe :: WS.Connection -> Connections -> (Connections, SocketId)
 subscribe conn (Connections {coSet, coId}) = (Connections {
-	coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
+    coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
 
 unsubscribe :: SocketId -> Connections -> Connections
 unsubscribe socketId (co @ Connections { coSet }) = co { coSet = I.deleteIx socketId coSet }
