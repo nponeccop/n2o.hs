@@ -24,10 +24,12 @@ application nextMessage handle state pending = do
     socketId <- modifyMVar state $ return . subscribe connection
     putStrLn $ "Connected socketId = " ++ show socketId
 
-    (receiveN2O connection >> forever (nextMessage (handle state) connection socketId)) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
+    (receiveN2O connection >> forever (nextMessage handle state connection socketId)) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
     putStrLn $ "Disconnected socketId = " ++ show socketId
+
+    entry <- byUnique state socketId
     modifyMVar_ state $ return . unsubscribe socketId
-    handle state connection socketId [AtomTerm "N2O_DISCONNECT"]
+    handle state entry connection socketId [AtomTerm "N2O_DISCONNECT"]
 
 somecatch :: SomeException -> IO ()
 somecatch e = print "SomeException" >> print e
@@ -37,11 +39,12 @@ iocatch _ = print "IOException"
 
 simple ip port handle state = WS.runServer ip port $ application nextMessage handle state
 
-nextMessage handle connection socketId = do
+nextMessage handle state connection socketId = do
     message <- receiveMessage connection
     print "Parsed"
     print message
-    handle connection socketId message
+    entry <- byUnique state socketId
+    handle state entry connection socketId message
 
 --simpleApp x = application simpleLoop x 
 

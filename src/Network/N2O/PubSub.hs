@@ -64,3 +64,4 @@ setState state socketId userData = modifyMVar_ state $ return . foo where
     mo s = I.updateIx socketId (old { eUser = userData }) s where
         old = fromJust $ getOne $ getEQ socketId s
 
+byUnique state socketId = fromJust . getOne . getEQ socketId . coSet <$> readMVar state
