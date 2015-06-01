@@ -8,6 +8,7 @@ import Data.Binary
 import Data.Monoid ((<>))
 import Network.WebSockets as WS
 import Control.Concurrent
+import Control.Monad
 import Network.N2O.PubSub
 
 eval :: BL.ByteString -> BL.ByteString
@@ -23,7 +24,7 @@ application nextMessage handle state pending = do
     socketId <- modifyMVar state $ return . subscribe connection
     putStrLn $ "Connected socketId = " ++ show socketId
 
-    (receiveN2O connection >> nextMessage (handle state) connection socketId) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
+    (receiveN2O connection >> forever (nextMessage (handle state) connection socketId)) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
     putStrLn $ "Disconnected socketId = " ++ show socketId
     modifyMVar_ state $ return . unsubscribe socketId
     handle state connection socketId [AtomTerm "N2O_DISCONNECT"]
@@ -36,14 +37,11 @@ iocatch _ = print "IOException"
 
 simple ip port handle state = WS.runServer ip port $ application nextMessage handle state
 
-
 nextMessage handle connection socketId = do
-    let loop = nextMessage handle connection socketId
     message <- receiveMessage connection
     print "Parsed"
     print message
     handle connection socketId message
-    loop
 
 --simpleApp x = application simpleLoop x 
 
