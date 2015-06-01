@@ -6,7 +6,7 @@ import Data.BERT
 import qualified Data.ByteString.Lazy as BL
 import Data.Binary
 import Data.Monoid ((<>))
-import Network.WebSockets as WS
+import Network.WebSockets as WS hiding (send)
 import Control.Concurrent
 import Control.Monad
 import Network.N2O.PubSub
@@ -71,4 +71,8 @@ receiveMessage connection = do
                 print x
                 error "protocol violation 2"
 
-send connection = WS.sendBinaryData connection . eval
+send entry = WS.sendBinaryData (eConn entry) . eval
+
+broadcastBinary message
+    = mapM_ $ \entry -> send entry message
+
