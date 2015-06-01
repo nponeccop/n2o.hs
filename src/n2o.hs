@@ -6,21 +6,18 @@ import Data.Char (isPunctuation, isSpace)
 import Data.Maybe
 import Data.Monoid ((<>))
 import Data.String (fromString)
-import Control.Concurrent (newMVar, readMVar)
+import Control.Concurrent (readMVar)
 
 import Network.N2O
-import Network.N2O.PubSub
+import Network.N2O.PubSub (setState, Entry(..), Connections(..))
 import Data.IxSet as I
 
-main = do
-    state <- newMVar newChannel
-    putStrLn "Started"
-    simple  "0.0.0.0" 9160 handle state
+main = runServer "0.0.0.0" 9160 handle loggedOff
 
 loggedOff :: Maybe String
 loggedOff = Nothing
 
-sendMessage text = broadcastBinary $ call "log" $ fromString text
+sendMessage text = broadcast $ call "log" $ fromString text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
@@ -41,7 +38,7 @@ handle state entry [AtomTerm "LOGON", AtomTerm name]
                 setState state (eSocketId entry) $ Just $ fromString name
                 clients <- loggedOn state
                 let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcastBinary (call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
+                broadcast (call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
         
 handle state _entry [AtomTerm "MSG", AtomTerm text]
     = do
@@ -52,7 +49,7 @@ handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         clients <- loggedOn state
         let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcastBinary (call "$('#users').html" (fromString foo) <> call "log" (fromMaybe "Someone" (fromString <$> eUser entry) <> " disconnected")) clients
+        broadcast (call "$('#users').html" (fromString foo) <> call "log" (fromMaybe "Someone" (fromString <$> eUser entry) <> " disconnected")) clients
 
 handle _state _entry _ = putStrLn "Protocol violation"
 

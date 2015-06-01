@@ -1,5 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Network.N2O where
+module Network.N2O (
+    send,
+    call,
+    Network.N2O.runServer,
+    broadcast
+) where
 
 import Control.Exception
 import Data.BERT
@@ -16,7 +21,7 @@ eval x = encode $ TupleTerm [AtomTerm "io", NilTerm, showBERT x]
 
 call fun arg = BL.concat [fun,  "('", arg, "');"]
 
-call0 fun = fun <> "()"
+-- call0 fun = fun <> "()"
 
 application nextMessage handle state pending = do
     connection <- WS.acceptRequest pending
@@ -37,7 +42,10 @@ somecatch e = print "SomeException" >> print e
 iocatch :: IOException -> IO ()
 iocatch _ = print "IOException"
 
-simple ip port handle state = WS.runServer ip port $ application nextMessage handle state
+runServer ip port handle userState = do
+    print "Started"
+    state <- newMVar newChannel
+    WS.runServer ip port $ application nextMessage handle state
 
 nextMessage handle state connection socketId = do
     message <- receiveMessage connection
@@ -73,6 +81,6 @@ receiveMessage connection = do
 
 send entry = WS.sendBinaryData (eConn entry) . eval
 
-broadcastBinary message
+broadcast message
     = mapM_ $ \entry -> send entry message
 
