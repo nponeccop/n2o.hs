@@ -36,28 +36,28 @@ sendMessage text = broadcastBinary $ eval $ call "log" $ fromString text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
-handle state _entry connection socketId [AtomTerm "LOGON", AtomTerm name]
+handle state entry [AtomTerm "LOGON", AtomTerm name]
     = do
-        send connection $ call "log" "ahaha" <> call "joinSession" ""
-        setState state socketId $ Just $ fromString name
+        send (eConn entry) $ call "log" "ahaha" <> call "joinSession" ""
+        setState state (eSocketId entry) $ Just $ fromString name
         clients <- loggedOn state
         let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
         broadcastBinary (eval $ call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
         
-handle state _entry _connection socketId [AtomTerm "MSG", AtomTerm text]
+handle state _entry [AtomTerm "MSG", AtomTerm text]
     = do
         clients <- loggedOn state
         sendMessage text clients
         print clients
 
-handle state entry _connection _ [AtomTerm "N2O_DISCONNECT"]
+handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         print "N2O_DISCONNECT"
         clients <- loggedOn state
         let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
         broadcastBinary (eval $ call "$('#users').html" (fromString foo) <> call "log" (fromMaybe "Someone" (fromString <$> eUser entry) <> " disconnected")) clients
 
-handle _state _entry _connection _ _ = putStrLn "Protocol violation"
+handle _state _entry _ = putStrLn "Protocol violation"
 
 {-
              | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->

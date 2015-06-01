@@ -29,7 +29,7 @@ application nextMessage handle state pending = do
 
     entry <- byUnique state socketId
     modifyMVar_ state $ return . unsubscribe socketId
-    handle state entry connection socketId [AtomTerm "N2O_DISCONNECT"]
+    handle state entry [AtomTerm "N2O_DISCONNECT"]
 
 somecatch :: SomeException -> IO ()
 somecatch e = print "SomeException" >> print e
@@ -44,7 +44,7 @@ nextMessage handle state connection socketId = do
     print "Parsed"
     print message
     entry <- byUnique state socketId
-    handle state entry connection socketId message
+    handle state entry message
 
 --simpleApp x = application simpleLoop x 
 
