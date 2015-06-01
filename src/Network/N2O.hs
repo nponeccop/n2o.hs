@@ -10,7 +10,6 @@ import Control.Exception
 import Data.BERT
 import qualified Data.ByteString.Lazy as BL
 import Data.Binary
-import Data.Monoid ((<>))
 import Network.WebSockets as WS hiding (send)
 import Control.Concurrent
 import Control.Monad

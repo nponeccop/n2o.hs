@@ -1,5 +1,13 @@
-{-# LANGUAGE NoMonomorphismRestriction, DeriveDataTypeable, StandaloneDeriving, NamedFieldPuns  #-}
-module Network.N2O.PubSub where
+{-# LANGUAGE NoMonomorphismRestriction, DeriveDataTypeable, StandaloneDeriving, NamedFieldPuns, ScopedTypeVariables  #-}
+module Network.N2O.PubSub (
+    subscribe,
+    byUnique,
+    unsubscribe,
+    newChannel,
+    Entry(..),
+    Connections(..),
+    setState
+) where
 
 import Control.Concurrent
 import Data.Data (Data, gunfold, toConstr, dataTypeOf)
@@ -20,12 +28,12 @@ instance Data Connection where
 
 --data Foo  = Foo Int | All deriving (Ord, Eq, Show, Typeable, Data)
 
-data Entry = Entry { eUser :: Maybe String, eSocketId :: SocketId, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
+data Entry a = Entry { eUser :: Maybe a, eSocketId :: SocketId, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
 
-instance Indexable Entry where
+instance (Data a, Ord a) => Indexable (Entry a) where
     empty = ixSet
         [ ixGen (Proxy :: Proxy SocketId)
-        , ixGen (Proxy :: Proxy (Maybe String))
+        , ixGen (Proxy :: Proxy (Maybe a))
         ]
 
 instance Eq Connection where
@@ -39,7 +47,7 @@ instance Show Connection where
 
 type SocketId = Int
 
-data Connections = Connections { coSet :: IxSet Entry, coId :: SocketId }
+data Connections a = Connections { coSet :: IxSet (Entry a), coId :: SocketId }
 
 
 initialId :: SocketId
@@ -48,17 +56,17 @@ initialId = 0
 nextId :: SocketId -> SocketId
 nextId = succ
 
-newChannel :: Connections
+newChannel :: (Data a, Ord a) => Connections a
 newChannel = Connections I.empty initialId
 
-subscribe :: WS.Connection -> Connections -> (Connections, SocketId)
+subscribe :: (Data a, Ord a) => WS.Connection -> Connections a -> (Connections a, SocketId)
 subscribe conn (Connections {coSet, coId}) = (Connections {
     coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
 
-unsubscribe :: SocketId -> Connections -> Connections
+unsubscribe :: (Data a, Ord a) => SocketId -> Connections a -> Connections a
 unsubscribe socketId (co @ Connections { coSet }) = co { coSet = I.deleteIx socketId coSet }
 
-setState :: MVar Connections -> SocketId -> Maybe String -> IO ()
+setState :: (Data a, Ord a) => MVar (Connections a) -> SocketId -> Maybe a -> IO ()
 setState state socketId userData = modifyMVar_ state $ return . foo where
     foo co = co { coSet = mo $ coSet co }
     mo s = I.updateIx socketId (old { eUser = userData }) s where
