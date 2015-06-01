@@ -2,6 +2,7 @@
 
 module Main (main) where
 import Data.BERT (Term(..))
+import Data.Char (isPunctuation, isSpace)
 import Data.Maybe
 import Data.Monoid ((<>))
 import Data.String (fromString)
@@ -36,13 +37,25 @@ sendMessage text = broadcastBinary $ eval $ call "log" $ fromString text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
+alert entry msg = send (eConn entry) $ call "alert" msg
+
+invalidName name = Prelude.null name || any isPunctuation name || any isSpace name
+
+clientExists state name = not . I.null . getEQ (Just name) . coSet <$> readMVar state
+
+
 handle state entry [AtomTerm "LOGON", AtomTerm name]
-    = do
-        send (eConn entry) $ call "log" "ahaha" <> call "joinSession" ""
-        setState state (eSocketId entry) $ Just $ fromString name
-        clients <- loggedOn state
-        let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcastBinary (eval $ call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
+    | invalidName name = alert entry "Name cannot contain punctuation or whitespace, and cannot be empty"
+    | otherwise = do
+        ce <- clientExists state name
+        if ce 
+            then alert entry "User already exists"
+            else do
+                send (eConn entry) $ call "joinSession" ""
+                setState state (eSocketId entry) $ Just $ fromString name
+                clients <- loggedOn state
+                let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
+                broadcastBinary (eval $ call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
         
 handle state _entry [AtomTerm "MSG", AtomTerm text]
     = do
@@ -51,6 +64,7 @@ handle state _entry [AtomTerm "MSG", AtomTerm text]
         print clients
 
 handle state entry [AtomTerm "N2O_DISCONNECT"]
+
     = do
         print "N2O_DISCONNECT"
         clients <- loggedOn state
@@ -59,23 +73,4 @@ handle state entry [AtomTerm "N2O_DISCONNECT"]
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
-{-
-             | not (prefix `T.isPrefixOf` WS.fromLazyByteString x) ->
-                WS.sendTextData connection ("Wrong announcement" :: Text)
-             | any ($ fst client) [T.null, T.any isPunctuation, T.any isSpace] ->
-                WS.sendTextData connection ("Name cannot " `mappend`
-                    "contain punctuation or whitespace, and " `mappend`
-                    "cannot be empty" :: Text)
-             | clientExists client clients ->
-                WS.sendTextData connection ("User already exists" :: Text)
-             | otherwise -> do
-                liftIO $ modifyMVar_ state $ \s -> do
-                    let s' = addClient client s
-                    WS.sendTextData connection $ "Welcome! Users: " `mappend` T.intercalate ", " (map fst s)
-                    broadcastBinary (bar $ BL.fromStrict $ encodeUtf8 $ fst client) s'
-                    return s'
-          where
-             prefix     = "Hi! I am "
-             client     = (T.drop (T.length prefix) (WS.fromLazyByteString x), connection)
--}
 
