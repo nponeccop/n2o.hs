@@ -1,8 +1,10 @@
 {-# LANGUAGE NoMonomorphismRestriction, DeriveDataTypeable, StandaloneDeriving, NamedFieldPuns  #-}
 module Network.N2O.PubSub where
 
+import Control.Concurrent
 import Data.Data (Data, gunfold, toConstr, dataTypeOf)
 import Data.IxSet as I
+import Data.Maybe
 import Network.WebSockets as WS
 
 import Data.Typeable (Typeable)
@@ -56,4 +58,9 @@ subscribe conn (Connections {coSet, coId}) = (Connections {
 unsubscribe :: SocketId -> Connections -> Connections
 unsubscribe socketId (co @ Connections { coSet }) = co { coSet = I.deleteIx socketId coSet }
 
+setState :: MVar Connections -> SocketId -> Maybe String -> IO ()
+setState state socketId userData = modifyMVar_ state $ return . foo where
+    foo co = co { coSet = mo $ coSet co }
+    mo s = I.updateIx socketId (old { eUser = userData }) s where
+        old = fromJust $ getOne $ getEQ socketId s
 

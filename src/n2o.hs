@@ -5,13 +5,12 @@ import Data.BERT (Term(..))
 import Data.Monoid ((<>))
 import Data.String (fromString)
 import Control.Monad (forM_)
-import Control.Concurrent (newMVar, modifyMVar_, readMVar, MVar)
+import Control.Concurrent (newMVar, readMVar)
 import qualified Network.WebSockets as WS
 
 import Network.N2O
 import Network.N2O.PubSub
 import Data.IxSet as I
-import Data.Maybe
 
 
 broadcastBinary message clients 
@@ -29,27 +28,25 @@ main = do
     simple  "0.0.0.0" 9160 handle state
     print "ok"
 
-setState :: MVar Connections -> SocketId -> Maybe String -> IO ()
-setState state socketId userData = modifyMVar_ state $ return . foo where
-    foo co = co { coSet = mo $ coSet co }
-    mo s = I.updateIx socketId (old { eUser = userData }) s where
-        old = fromJust $ getOne $ getEQ socketId s
+loggedOff :: Maybe String
+loggedOff = Nothing
 
+sendMessage text = broadcastBinary $ eval $ call "log" $ fromString text
 
-sendMessage clients text = broadcastBinary (eval $ call "log" $ fromString text) clients
+loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
 handle state connection socketId loop [AtomTerm "LOGON", AtomTerm name]
     = do
-        WS.sendBinaryData connection $ eval $ call "log" "ahaha" <> call "joinSession" ""
+        send connection $ call "log" "ahaha" <> call "joinSession" ""
         setState state socketId $ Just $ fromString name
         loop
         
 handle state _connection socketId loop [AtomTerm "MSG", AtomTerm text]
     = do
-            clients    <- toList . coSet <$> readMVar state
-            sendMessage clients text
-            print clients
-            loop
+        clients <- loggedOn state
+        sendMessage text clients
+        print clients
+        loop
 
 handle _state _connection _  _loop _ = putStrLn "Protocol violation"
 
