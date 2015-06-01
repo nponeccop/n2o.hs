@@ -26,6 +26,7 @@ application nextMessage handle state pending = do
     (receiveN2O connection >> nextMessage (handle state) connection socketId) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
     putStrLn $ "Disconnected socketId = " ++ show socketId
     modifyMVar_ state $ return . unsubscribe socketId
+    handle state connection socketId [AtomTerm "N2O_DISCONNECT"]
 
 somecatch :: SomeException -> IO ()
 somecatch e = print "SomeException" >> print e
@@ -41,7 +42,8 @@ nextMessage handle connection socketId = do
     message <- receiveMessage connection
     print "Parsed"
     print message
-    handle connection socketId loop message
+    handle connection socketId message
+    loop
 
 --simpleApp x = application simpleLoop x 
 
