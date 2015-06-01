@@ -2,6 +2,7 @@
 
 module Main (main) where
 import Data.BERT (Term(..))
+import Data.Maybe
 import Data.Monoid ((<>))
 import Data.String (fromString)
 import Control.Monad (forM_)
@@ -39,6 +40,10 @@ handle state connection socketId loop [AtomTerm "LOGON", AtomTerm name]
     = do
         send connection $ call "log" "ahaha" <> call "joinSession" ""
         setState state socketId $ Just $ fromString name
+        clients <- loggedOn state
+        sendMessage (name <> " joined") clients
+        let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
+        broadcastBinary (eval $ call "$('#users').html" $ fromString foo) clients
         loop
         
 handle state _connection socketId loop [AtomTerm "MSG", AtomTerm text]
