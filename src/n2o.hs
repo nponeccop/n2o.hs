@@ -41,9 +41,8 @@ handle state connection socketId loop [AtomTerm "LOGON", AtomTerm name]
         send connection $ call "log" "ahaha" <> call "joinSession" ""
         setState state socketId $ Just $ fromString name
         clients <- loggedOn state
-        sendMessage (name <> " joined") clients
         let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcastBinary (eval $ call "$('#users').html" $ fromString foo) clients
+        broadcastBinary (eval $ call "$('#users').html" (fromString foo) <> call "log" (fromString name <> " joined")) clients
         loop
         
 handle state _connection socketId loop [AtomTerm "MSG", AtomTerm text]
