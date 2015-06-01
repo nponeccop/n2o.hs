@@ -17,13 +17,13 @@ call fun arg = BL.concat [fun,  "('", arg, "');"]
 
 call0 fun = fun <> "()"
 
-application nextMessage state pending = do
+application nextMessage handle state pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
     socketId <- modifyMVar state $ return . subscribe connection
     putStrLn $ "Connected socketId = " ++ show socketId
 
-    (receiveN2O connection >> nextMessage connection socketId) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
+    (receiveN2O connection >> nextMessage (handle state) connection socketId) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
     putStrLn $ "Disconnected socketId = " ++ show socketId
     modifyMVar_ state $ return . unsubscribe socketId
 
@@ -33,7 +33,7 @@ somecatch e = print "SomeException" >> print e
 iocatch :: IOException -> IO ()
 iocatch _ = print "IOException"
 
-simple ip port handle state = WS.runServer ip port $ application (nextMessage $ handle state) state
+simple ip port handle state = WS.runServer ip port $ application nextMessage handle state
 
 
 nextMessage handle connection socketId = do
