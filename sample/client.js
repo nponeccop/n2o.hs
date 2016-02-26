@@ -67,7 +67,7 @@ function joinSession()
 $(document).ready(function () {
 
     $('#message-form').submit(function () {
-        ws.send(enc(tuple(atom('MSG'),atom($('#text').val()))))
+        ws.send(enc(tuple(atom('MSG'),atom([$('#user').val(), $('#text').val()].join('> ')))))
         $('#text').val('');
         return false;
     });
