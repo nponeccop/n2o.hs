@@ -30,14 +30,14 @@ function onMessage(event) {
                 eval(x)
             }
             else if (typeof x == 'object'
-                && x.type == 'Tuple' 
-                && x.value[0].length == 3
-                && x.value[0][0] == 'io') 
+                && x.t == 104
+                && x.v.length == 3
+                && x.v[0].v == 'io') 
             {
 
-                var foo = x.value[0]
+                var foo = x.v[0]
                 var data = foo[1]
-                eval(foo[2])
+                eval(x.v[2].v)
             }
             else
             {
@@ -67,7 +67,7 @@ function joinSession()
 $(document).ready(function () {
 
     $('#message-form').submit(function () {
-        ws.send(enc(tuple(atom('MSG'),atom($('#text').val()))))
+        ws.send(enc(tuple(atom('MSG'),bin($('#text').val()))))
         $('#text').val('');
         return false;
     });
@@ -75,7 +75,7 @@ $(document).ready(function () {
 
     $('#join-form').submit(function () {
         $('#warnings').html('');
-        ws.send(enc(tuple(atom('LOGON'),atom($('#user').val()))))
+        ws.send(enc(tuple(atom('LOGON'),bin($('#user').val()))))
         $('#join').append('Connecting...');
         return false;
     });
