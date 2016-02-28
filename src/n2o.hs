@@ -57,7 +57,7 @@ handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         clients <- loggedOn state
         let foo = concatMap ((\x -> "<li>" <> fromString x <> "</li>") . fromJust . eUser) clients
-        broadcast (call "$('#users').html" (fromString foo) <> call "log" (getUser entry <> " disconnected")) clients
+        broadcast (call "$('#users').html" (lazyEncodeUtf8 foo) <> call "log" (getEncodedUser entry <> " disconnected")) clients
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
