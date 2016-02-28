@@ -1,214 +1,46 @@
-// Micro BERT encoder/decoder
-// Copyright (c) Maxim Sokhatsky (@5HT)
+try { module.exports = {dec:dec,enc:enc}; } catch (e) { }
 
-function atom(o) { return { type: "Atom", value: o, toString: function() { return this.value; } }; };
-function bin(o) { return { type: "Binary", value: o, toString: function() { return "<<\'"+this.value+"'>>"; } }; };
-function tuple() {
-    return { type: "Tuple", value: arguments, toString: function() { var s = ""; 
-        for (var i=0;i<this.value.length;i++) { if (s!=="") s+=","; s+=this.value[i]; }
-        return "{" + s + "}"; } }; };
-function dec(S) { return decode(ltoa(new Uint8Array(S))); };
-function enc(s) {
-    var ori = encode(s), buf = new Uint8Array(new ArrayBuffer(ori.length));
-    for (var i=0; i < buf.length; i++) { buf[i] = ori.charCodeAt(i); }
-    return new Blob([buf.buffer]); };
+// BERT Encoder
 
-BERT = itoa(131);
-SATOM = itoa(115);
-ATOM = itoa(100);
-BINARY = itoa(109);
-SINT = itoa(97);
-INT = itoa(98);
-FLOAT = itoa(99);
-STR = itoa(107);
-LIST = itoa(108);
-SBIG = itoa(110);
-LBIG = itoa(111);
-TUPLE = itoa(104);
-LTUPLE = itoa(105);
-NIL = itoa(106);
-ZERO = itoa(0);
+function uc(u1,u2) { if (u1.byteLength == 0) return u2; if (u2.byteLength == 0) return u1;
+                     var a = new Uint8Array(u1.byteLength + u2.byteLength);
+                     a.set(u1, 0); a.set(u2, u1.byteLength); return a; };
+function ar(o)     { return o.v instanceof ArrayBuffer ? new Uint8Array(o.v) : o.v instanceof Uint8Array ? o.v :
+                     Array.isArray(o.v) ? new Uint8Array(o.v) : new Uint8Array(utf8_toByteArray(o.v).v);}
+function fl(a)     { return a.reduce(function(f,t){ return uc(f, t instanceof Uint8Array ? t :
+                     Array.isArray(t) ? fl(t) : new Uint8Array([t]) ); }, new Uint8Array()); }
+function atom(o)   { return {t:100,v:utf8_toByteArray(o).v}; }
+function bin(o)    { return {t:109,v:o instanceof ArrayBuffer ? new Uint8Array(o) : o instanceof Uint8Array ? o : utf8_toByteArray(o).v}; }
+function tuple()   { return {t:104,v:Array.apply(null,arguments)}; }
+function list()    { return {t:108,v:Array.apply(null,arguments)}; }
+function number(o) { return {t:98,v:o}; }
+function enc(o)    { return fl([131,ein(o)]); }
+function ein(o)    { return Array.isArray(o)?en_108({t:108,v:o}):eval('en_'+o.t)(o); }
+function en_undefined(o) { return [106]; }
+function en_98(o)  { return [98,o.v>>>24,(o.v>>>16)&255,(o.v>>>8)&255,o.v&255]; }
+function en_97(o)  { return [97,o.v];}
+function en_106(o) { return [106];}
+function en_100(o) { return [100,o.v.length>>>8,o.v.length&255,ar(o)]; }
+function en_107(o) { return [107,o.v.length>>>8,o.v.length&255,ar(o)];}
+function en_104(o) { var l=o.v.length,r=[]; for(var i=0;i<l;i++)r[i]=ein(o.v[i]); return [104,l,r]; }
+function en_109(o) { var l=o.v instanceof ArrayBuffer ? o.v.byteLength : o.v.length;
+                     return[109,l>>>24,(l>>>16)&255,(l>>>8)&255,l&255,ar(o)]; }
+function en_108(o) { var l=o.v.length,r=[]; for(var i=0;i<l;i++)r.push(ein(o.v[i]));
+                     return o.v.length==0?[106]:[108,l>>>24,(l>>>16)&255,(l>>>8)&255,l&255,r,106]; }
 
-function itoa(x) { return String.fromCharCode(x); }
-function ltoa(a) { for (var i = 0,s=""; i < a.length; i++) s += itoa(a[i]); return s; };
-function itol(Int, Length) {
-    var isNegative, OriginalInt, i, Rem, s = "";
-    isNegative = (Int < 0);
-    if (isNegative) { Int = Int * (0 - 1); }
-    OriginalInt = Int;
-    for (i = 0; i < Length; i++) { 
-        Rem = Int % 256;
-        if (isNegative) { Rem = 255 - Rem; }
-        s = String.fromCharCode(Rem) + s;
-        Int = Math.floor(Int / 256);
-    }
-    if (Int > 0) { throw ("BERT: Range: " + OriginalInt); }
-    return s; };
-function ltoi(S, Length) {
-    var isNegative, i, n, Num = 0;
-    isNegative = (S.charCodeAt(0) > 128);
-    for (i = 0; i < Length; i++) {
-        n = S.charCodeAt(i);
-        if (isNegative) { n = 255 - n; }
-        if (Num === 0) { Num = n; }
-        else { Num = Num * 256 + n; }
-    }
-    if (isNegative) { Num = Num * (0 - 1); }
-    return Num; };
-function ltobi(S, Count) {
-    var isNegative, i, n, Num = 0;
-    isNegative = (S.charCodeAt(0) === 1);
-    S = S.substring(1);
-    for (i = Count - 1; i >= 0; i--) {
-        n = S.charCodeAt(i);
-        if (Num === 0) { Num = n; } else { Num = Num * 256 + n; } }
-    if (isNegative) { return Num * -1; }
-    return Num; };
+// BERT Decoder
 
-function encode(o) { return BERT + en_inner(o); };
-function en_inner(Obj) { if(Obj === undefined) return NIL; var func = 'en_' + typeof(Obj); return eval(func)(Obj); };
-function en_string(Obj) { return STR + itol(Obj.length, 2) + Obj; };
-function en_boolean(Obj) { if (Obj) return en_inner(atom("true")); else return en_inner(atom("false")); };
-function en_number(Obj) { var isi = (Obj % 1 === 0); if (!isi) { return en_float(Obj); }
-    if (isi && Obj >= 0 && Obj < 256) { return SINT + itol(Obj, 1); }
-    return INT + itol(Obj, 4); };
-function en_float(Obj) { var s = Obj.toExponential(); while (s.length < 31) { s += ZERO; } return FLOAT + s; };
-function en_object(Obj) {
-    if (Obj.type === "Atom") return en_atom(Obj);
-    if (Obj.type === "Binary") return en_bin(Obj);
-    if (Obj.type === "Tuple") return en_tuple(Obj);
-    if (Obj.constructor.toString().indexOf("Array") !== -1) return en_array(Obj);
-    return en_associative_array(Obj); };
-function en_atom(Obj) { return ATOM + itol(Obj.value.length, 2) + Obj.value; };
-function en_bin(Obj) { return BINARY + itol(Obj.value.length, 4) + Obj.value; };
-function en_tuple(Obj) {
-    var i, s = "";
-    if (Obj.value.length < 256) { s += TUPLE + itol(Obj.value.length, 1); }
-    else { s += LTUPLE + itol(Obj.value.length, 4); }
-    for (i = 0; i < Obj.value.length; i++) { s += en_inner(Obj.value[i]); }
-    return s; };
-function en_array(Obj) {
-    var i, s = LIST + itol(Obj.length, 4);
-    for (i = 0; i < Obj.length; i++) { s += en_inner(Obj[i]); }
-    s += NIL;
-    return s; };
-function en_associative_array(Obj) {
-    var key, Arr = [];
-    for (key in Obj) { if (Obj.hasOwnProperty(key)) { Arr.push(tuple(atom(key), Obj[key])); } }
-    return en_array(Arr); };
-
-function decode(S) {
-    if (S[0] !== BERT) { throw ("Not a valid BERT."); }
-    var Obj = de_inner(S.substring(1));
-    if (Obj.rest !== "") { throw ("Invalid BERT."); }
-    return Obj.value; };
-function de_inner(S) {
-    var Type = S[0];
-    S = S.substring(1);
-    switch (Type) {
-        case SATOM: de_atom(S, 1);
-        case ATOM: return de_atom(S, 2);
-        case BINARY: return de_bin(S);
-        case SINT: return de_small_integer(S);
-        case INT: return de_integer(S);
-        case FLOAT: return de_float(S);
-        case SBIG: return de_big(S,1);
-        case LBIG: return de_big(S,4);
-        case STR: return de_string(S);
-        case LIST: return de_list(S);
-        case TUPLE: return de_tuple(S, 1);
-        case NIL: return de_nil(S);
-        default: throw ("BERT: " + S.charCodeAt(0)); } };
-function de_atom(S, Count) {
-    var Size, Value;
-    Size = ltoi(S, Count);
-    S = S.substring(Count);
-    Value = S.substring(0, Size);
-    if (Value === "true") { Value = true; }
-    else if (Value === "false") { Value = false; }
-    return { value: atom(Value), rest:  S.substring(Size) }; };
-function de_bin(S) {
-    var Size = ltoi(S, 4);
-    S = S.substring(4);
-    return { value: bin(S.substring(0, Size)), rest: S.substring(Size) }; };
-function de_big(S, Count) {
-    var Size, Value;
-    Size = ltoi(S, Count);
-    S = S.substring(Count);
-    Value = ltobi(S, Size);
-    return { value : Value, rest: S.substring(Size + 1) }; };
-function de_integer(S) {
-    var Value = ltoi(S, 4);
-    S = S.substring(4);
-    return { value: Value, rest: S }; };
-function de_small_integer(S) {
-    var Value = S.charCodeAt(0);
-    S = S.substring(1);
-    return { value: Value, rest: S }; };
-function de_float(S) {
-    var Size = 31;
-    return { value: parseFloat(S.substring(0, Size)), rest: S.substring(Size) }; };
-function de_string(S) {
-    var Size = ltoi(S, 2);
-    S = S.substring(2);
-    return { value: S.substring(0, Size), rest: S.substring(Size) }; };
-function de_list(S) {
-    var Size, i, El, LastChar, Arr = [];
-    Size = ltoi(S, 4);
-    S = S.substring(4);
-    for (i = 0; i < Size; i++) { El = de_inner(S); Arr.push(El.value); S = El.rest; }
-    LastChar = S[0];
-    if (LastChar !== NIL) { throw ("BERT: Wrong NIL."); }
-    S = S.substring(1);
-    return { value: Arr, rest: S }; };
-function de_tuple(S, Count) {
-    var Size, i, El, Arr = [];
-    Size = ltoi(S, Count);
-    S = S.substring(Count);
-    for (i = 0; i < Size; i++) { El = de_inner(S); Arr.push(El.value); S = El.rest; }
-    return { value: tuple(Arr), rest: S }; };
-function de_nil(S) { return { value: [], rest: S }; };
-
-var $bert = {};
-
-$bert.on = function onbert(evt, callback) // BERT formatter
-{
-    console.log("Bert On");
-    console.log(evt.data);
-
-    // Check for FileReader.readAsArrayBuffer()
-    if(Blob.prototype.isPrototypeOf(evt.data) && (evt.data.length > 0 || evt.data.size > 0)) {
-        var reader = new FileReader();
-        reader.addEventListener("loadend", function() {
-            try {
-                var erlang = dec(reader.result);
-                if (typeof callback  == 'function') callback(erlang);
-            } catch (e) { return { status: "error", desc: e }; }
-        });
-        reader.readAsArrayBuffer(evt.data);
-        return { status: "ok" };
-    }
-    else  { return { status: "error", desc: "not Bert" }; }
-};
-
-$bert.do = function dobert(x)
-{
-    if (typeof x == 'string')
-    {
-        eval(x)
-    }
-    else if (typeof x == 'object'
-        && x.type == 'Tuple'
-        && x.value[0].length == 3
-        && x.value[0][0] == 'io')
-    {
-        var foo = x.value[0]
-        var data = foo[1]
-        eval(foo[2])
-    }
-    else
-    {
-        alert("Unknown x of " + typeof x)
-        console.log(x)
-    }
-};
+function nop(b) { return []; };
+function big(b) { var sk=b==1?sx.getUint8(ix++):sx.getInt32((a=ix,ix+=4,a)); ix+=sk+1; return []; };
+function int(b) { return b==1?sx.getUint8(ix++):sx.getInt32((a=ix,ix+=4,a)); };
+function dec(d) { sx=new DataView(d);ix=0; if(sx.getUint8(ix++)!==131)throw("BERT?"); return din(); };
+function str(b) { var dv,sz=(b==2?sx.getUint16(ix):sx.getInt32(ix));ix+=b;
+                  var r=sx.buffer.slice(ix,ix+=sz); return b==2?utf8_dec(r):r; };
+function run(b) { var sz=(b==1?sx.getUint8(ix):sx.getUint32(ix)),r=[]; ix+=b;
+                  for(var i=0;i<sz;i++) r.push(din()); if(b==4)ix++; return r; };
+function din()  { var c=sx.getUint8(ix++),x; switch(c) { case 97: x=[int,1];break;
+                  case 98:  x=[int,4]; break; case 100: x=[str,2]; break;
+                  case 110: x=[big,1]; break; case 111: x=[big,4]; break;
+                  case 104: x=[run,1]; break; case 107: x=[str,2]; break;
+                  case 108: x=[run,4]; break; case 109: x=[str,4]; break;
+                  default:  x=[nop,0]; } return {t:c,v:x[0](x[1])};};
