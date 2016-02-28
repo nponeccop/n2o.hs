@@ -1,0 +1,7 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- '.'
+extra-deps:
+- bert-1.2.2.4
+resolver: nightly-2016-02-28
