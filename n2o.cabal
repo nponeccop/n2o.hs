@@ -3,18 +3,18 @@
 
 name:                n2o
 version:             0.1.0.0
--- synopsis:            
--- description:         
 license:             MIT
 Synopsis:   WebSocket Application Server
 description:          web framework
 license-file:        LICENSE
 author:              Andrii Melnykov
 maintainer:          andy.melnikov@gmail.com
--- copyright:           
 category:            Web
 build-type:          Simple
--- extra-source-files:  
+extra-source-files:
+  README.md
+  src/Network/N2O.hs
+  src/Network/N2O/PubSub.hs
 cabal-version:       >=1.10
 source-repository head
   type:              git
