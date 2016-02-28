@@ -6,6 +6,8 @@ version:             0.1.0.0
 -- synopsis:            
 -- description:         
 license:             MIT
+Synopsis:   WebSocket Application Server
+description:          web framework
 license-file:        LICENSE
 author:              Andrii Melnykov
 maintainer:          andy.melnikov@gmail.com
@@ -14,14 +16,17 @@ category:            Web
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
+source-repository head
+  type:              git
+  location:          https://github.com/nponeccop/n2o.hs
 
 executable n2o
   main-is: n2o.hs            
   -- other-modules:       
   -- other-extensions:    
   ghc-options: -W
-  build-depends:       
-    base >=4.7
+  build-depends:
+      base >= 4.7 && < 5
     , websockets
     , text
     , transformers
