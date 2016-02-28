@@ -15,6 +15,7 @@ import Network.N2O
 import Network.N2O.PubSub (setState, Entry(..), Connections(..))
 import Data.IxSet as I
 
+main :: IO ()
 main = runServer "0.0.0.0" 9160 handle loggedOff
 
 loggedOff :: Maybe String
@@ -43,8 +44,8 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                 send entry $ call "joinSession" ""
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
-                let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcast (call "$('#users').html" (fromString foo) <> call "log" ((fromString dname) <> " joined")) clients
+                let foo = lazyEncodeUtf8 . T.pack $ concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
+                broadcast (call "$('#users').html" foo <> call "log" (name <> " joined")) clients
         
 handle state _entry [AtomTerm "MSG", BinaryTerm text]
     = do
@@ -54,7 +55,7 @@ handle state _entry [AtomTerm "MSG", BinaryTerm text]
 handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         clients <- loggedOn state
-        let foo = concatMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
+        let foo = concatMap ((\x -> "<li>" <> fromString x <> "</li>") . fromJust . eUser) clients
         broadcast (call "$('#users').html" (fromString foo) <> call "log" (fromMaybe "Someone" (fromString <$> eUser entry) <> " disconnected")) clients
 
 handle _state _entry _ = putStrLn "Protocol violation"
