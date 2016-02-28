@@ -26,6 +26,7 @@ Fo quickstart you need `Git` for retrieving sources, glorious `Haskell` compiler
    $ webfsd
    $ dist/build/n2o/n2o
    $ open http://localhost:8000/sample/client.html
+   $ casperjs test tests
 ```
 
 Idea
