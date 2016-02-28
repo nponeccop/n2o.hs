@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Network.N2O (
+    b2t,t2b,
     send,
     call,
     Network.N2O.runServer,
@@ -14,11 +15,19 @@ import Network.WebSockets as WS hiding (send)
 import Control.Concurrent
 import Control.Monad
 import Network.N2O.PubSub
+import qualified Data.Text as T
+import Data.Text.Encoding
+
+b2t :: BL.ByteString -> T.Text
+b2t = decodeUtf8 . BL.toStrict
+
+t2b :: T.Text -> BL.ByteString
+t2b = BL.fromStrict . encodeUtf8
 
 eval :: BL.ByteString -> BL.ByteString
 eval x = encode $ TupleTerm [AtomTerm "io", NilTerm, showBERT x]
 
-call fun arg = BL.concat [fun,  "('", arg, "');"]
+call fun arg = t2b $ T.concat [fun,  "('", arg, "');"]
 
 -- call0 fun = fun <> "()"
 
