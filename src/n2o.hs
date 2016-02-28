@@ -18,7 +18,7 @@ main = runServer "0.0.0.0" 9160 handle loggedOff
 loggedOff :: Maybe T.Text
 loggedOff = Nothing
 
-sendMessage text = broadcast $ call "log" $ text
+sendMessage text = broadcast $ call "log" text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
