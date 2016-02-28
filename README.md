@@ -12,6 +12,22 @@ Features
 * PubSub: Built-in
 * DOM Language: Blaze-HTML
 
+Mac OS X
+--------
+
+Fo quickstart you need `Git` for retrieving sources, glorious `Haskell` compiler, Static Web Server `webfsd`, `Casper.js` which run on top of headless v8 `Phantom.js`:
+
+```
+   $ brew install ghc
+   $ brew install webfs
+   $ npm install -g casperjs
+   $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
+   $ cabal install
+   $ webfsd
+   $ dist/build/n2o/n2o
+   $ open http://localhost:8000/sample/client.html
+```
+
 Idea
 ----
 
