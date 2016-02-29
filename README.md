@@ -19,6 +19,7 @@ For quickstart you need `Git` for retrieving sources, glorious `Haskell` compile
 
 ```
    $ brew install ghc
+   $ brew install cabal-install
    $ brew install webfs
    $ npm install -g casperjs
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
