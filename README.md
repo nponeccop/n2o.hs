@@ -35,7 +35,7 @@ Arch Linux
 
 The library and the example chat server:
 ```
-   $ pacman -Sy --needed git ghc webfs
+   $ pacman -Sy --needed git ghc cabal-install webfs
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
    $ cabal install
    $ webfsd
