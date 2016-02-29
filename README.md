@@ -15,7 +15,7 @@ Features
 Mac OS X
 --------
 
-Fo quickstart you need `Git` for retrieving sources, glorious `Haskell` compiler, Static Web Server `webfsd`, `Casper.js` which run on top of headless v8 `Phantom.js`:
+For quickstart you need `Git` for retrieving sources, glorious `Haskell` compiler, Static Web Server `webfsd`, `Casper.js` which run on top of headless v8 `Phantom.js`:
 
 ```
    $ brew install ghc
@@ -27,6 +27,26 @@ Fo quickstart you need `Git` for retrieving sources, glorious `Haskell` compiler
    $ dist/build/n2o/n2o
    $ open http://localhost:8000/sample/client.html
    $ casperjs test tests
+```
+
+Arch Linux
+----------
+
+The library and the example chat server:
+```
+   $ pacman -Sy --needed git ghc webfs
+   $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
+   $ cabal install
+   $ webfsd
+   $ nohup dist/build/n2o/n2o &
+   $ open http://localhost:8000/sample/client.html
+```
+The PhantomJS headless browser tests:
+```
+   $ pacman -S --needed npm phantomjs
+   $ npm install casperjs
+   $ open http://localhost:8000/sample/client.html
+   $ node_modules/.bin/casperjs test tests
 ```
 
 Idea
