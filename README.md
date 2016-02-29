@@ -23,6 +23,7 @@ For quickstart you need `Git` for retrieving sources, glorious `Haskell` compile
    $ brew install webfs
    $ npm install -g casperjs
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
+   $ cabal update
    $ cabal install
    $ webfsd
    $ dist/build/n2o/n2o
@@ -37,6 +38,7 @@ The library and the example chat server:
 ```
    $ pacman -Sy --needed git ghc cabal-install webfs
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
+   $ cabal update
    $ cabal install
    $ webfsd
    $ nohup dist/build/n2o/n2o &
