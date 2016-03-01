@@ -13,11 +13,11 @@ Features
 * DOM Language: Blaze-HTML
 
 ```
-$ cloc static src/Network/N2O | tail -n+6 | sed s/--*// | column -t
+$ cloc static src/Network/N2O* | tail -n+6 | sed s/--*// | column -t
 Language    files  blank  comment  code
 JavaScript  6      28     10       147
-Haskell     1      28     4        64
-SUM:        7      56     14       211
+Haskell     2      48     6        136
+SUM:        8      76     16       283
 ```
 
 Mac OS X
