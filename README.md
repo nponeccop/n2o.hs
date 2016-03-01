@@ -1,9 +1,13 @@
-N2O: Haskell Web Framework 
+N2O: Haskell Web Framework [![Build Status](https://secure.travis-ci.org/nponeccop/n2o.hs.png?branch=master)](http://travis-ci.org/nponeccop/n2o.hs)
 ==========================
 
 A Haskell port of the N2O Erlang Application Server: http://synrc.github.io/n2o/
 
-[![Build Status](https://secure.travis-ci.org/nponeccop/n2o.hs.png?branch=master)](http://travis-ci.org/nponeccop/n2o.hs)
+
+Support:
+
+* [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nponeccop/n2o.hs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+* IRC Channel #n2o on FreeNode 24/7
 
 Introduction
 ------------
@@ -88,11 +92,6 @@ Idea
 
 Small and efficient protocol stack with endpoint formatters having
 session storage with select for pubsub. The protocol is binary compatible with original N2O protocol: http://5ht.co/n2o.htm
-
-Support
--------
-* [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nponeccop/n2o.hs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-* IRC Channel #n2o on FreeNode 24/7
 
 Credits
 -------
