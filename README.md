@@ -1,7 +1,19 @@
-N2O: Haskell Web Framework
+N2O: Haskell Web Framework 
 ==========================
 
+A Haskell port of the N2O Erlang Application Server: http://synrc.github.io/n2o/
+
 [![Build Status](https://secure.travis-ci.org/nponeccop/n2o.hs.png?branch=master)](http://travis-ci.org/nponeccop/n2o.hs)
+
+Introduction
+------------
+
+The eponymous N2O protocol is an innovative Javascript RPC where client state is moved to the server. 
+
+The server pushes chunks of javascript code to client which get evaluated there. The client pushes browser clicks to the server to the handled there. Achieved statelessness of client code obviates such things as synchronization of client-side models with the server, and dramatically reduces client code size. After all, we want to program as little as possible in such a poor language as 
+Javascript, and more in Erlang or Haskell.
+
+The idea has been field-tested in large-scale deployments in such areas as online banking and online card games, and contrary to intuition, shows excellent user-perceived performance.
 
 Features
 --------
