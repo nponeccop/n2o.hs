@@ -15,6 +15,17 @@ Javascript, and more in Erlang or Haskell.
 
 The idea has been field-tested in large-scale deployments in such areas as online banking and online card games, and contrary to intuition, shows excellent user-perceived performance.
 
+Client Architecture
+-------------------
+
+### Receiving events from the server
+
+There is no such thing as installation of handlers of server events. Instead, the server can command browser to execute arbitrary Javascript code. In practice it means that small pieces of code are generated on server, such as `$('#foo').html("bar")`, so there is no need to synchronize client-side code with server-side changes: some client code is effectively moved to the server.
+
+### Sending events to the server
+
+The sending is unidirectional, just like the receiving: there are no need to wait for 'RPC return value' or analogs. So typical client code is just `ws.send(enc(tuple(atom('MSG'),bin($('#text').val()))))` - some data are collected and sent, that's it. Typically there are no callbacks, loops or conditions.
+
 Features
 --------
 
