@@ -1,3 +1,6 @@
 *.swo
 *.swp
 dist/
+.cabal-sandbox/
+node_modules/
+cabal-sandbox.config
