@@ -60,7 +60,7 @@ newChannel :: (Data a, Ord a) => Connections a
 newChannel = Connections I.empty initialId
 
 subscribe :: (Data a, Ord a) => WS.Connection -> Connections a -> (Connections a, SocketId)
-subscribe conn (Connections {coSet, coId}) = (Connections {
+subscribe conn Connections {coSet, coId} = (Connections {
     coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
 
 unsubscribe :: (Data a, Ord a) => SocketId -> Connections a -> Connections a
