@@ -1,0 +1,20 @@
+name:          StaticWebServer
+version:       0.1
+category:      Network
+synopsis:      An example of using the http-server library.
+description:   An example of using the http-server library.
+cabal-version: >= 1.2
+build-type:    Simple
+
+executable StaticWebServer
+  main-is: StaticWebServer.hs
+
+  build-depends:
+    base        >= 4    && < 5,
+    filepath    >= 1    && < 2,
+    http-server >= 0.2  && < 2,
+    url         >= 2.1  && < 3,
+    utf8-string >= 0.3  && < 1,
+    xhtml       >= 3000 && < 3001
+
+  ghc-options: -Wall -O2

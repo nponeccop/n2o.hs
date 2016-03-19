@@ -1,0 +1,16 @@
+Static Web Server
+=================
+
+Here we have a simple server that serves static files and demonstrates how one could use the
+http-server library. For test purpose we handle only HTTP GET requests and few MIME types.
+
+Installation & Launch
+=====================
+
+```
+$ cabal install
+$ ./dist/build/StaticWebServer/StaticWebServer
+```
+
+Open http://localhost:8000/client.html in your browser.
+Make sure that `n2o` is running and feel free to test it.
