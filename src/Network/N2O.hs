@@ -25,7 +25,7 @@ t2b :: T.Text -> BL.ByteString
 t2b = BL.fromStrict . encodeUtf8
 
 eval :: T.Text -> BL.ByteString
-eval x = encode $ TupleTerm [AtomTerm "io", NilTerm, showBERT $ t2b x]
+eval x = encode $ TupleTerm [AtomTerm "io", showBERT $ t2b x, NilTerm]
 
 call fun arg = T.concat [fun,  "('", arg, "');"]
 
