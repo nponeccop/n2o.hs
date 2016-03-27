@@ -3,20 +3,22 @@ module Network.N2O (
     b2t,t2b,
     send,
     call,
+    assign,
     Network.N2O.runServer,
     broadcast
 ) where
 
 import Control.Exception
-import Data.BERT
-import qualified Data.ByteString.Lazy as BL
-import Data.Binary
-import Network.WebSockets as WS hiding (send)
 import Control.Concurrent
 import Control.Monad
-import Network.N2O.PubSub
-import qualified Data.Text as T
+import Data.BERT
+import Data.Binary
 import Data.Text.Encoding
+import Network.N2O.PubSub
+
+import qualified Data.Text as T
+import Network.WebSockets as WS hiding (send)
+import qualified Data.ByteString.Lazy as BL
 
 b2t :: BL.ByteString -> T.Text
 b2t = decodeUtf8 . BL.toStrict
@@ -28,7 +30,7 @@ eval :: T.Text -> BL.ByteString
 eval x = encode $ TupleTerm [AtomTerm "io", showBERT $ t2b x, NilTerm]
 
 call fun arg = T.concat [fun,  "('", arg, "');"]
-
+assign elem arg = T.concat [elem, ".innerHTML='", arg, "';"]
 -- call0 fun = fun <> "()"
 
 application nextMessage handle state pending = do
@@ -91,4 +93,3 @@ send entry = WS.sendBinaryData (eConn entry) . eval
 
 broadcast message
     = mapM_ $ \entry -> send entry message
-
