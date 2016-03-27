@@ -44,7 +44,7 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
                 let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcast (call "$('#users').html" foo <> call "log" (dname <> " joined")) clients
+                broadcast (assign "qi('users')" foo <> call "log" (dname <> " joined")) clients
         
 handle state entry [AtomTerm "MSG", BinaryTerm text]
     = do
@@ -56,7 +56,7 @@ handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         clients <- loggedOn state
         let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcast (call "$('#users').html" foo <> call "log" (getUser entry <> " disconnected")) clients
+        broadcast (assign "qi('users')" foo <> call "log" (getUser entry <> " disconnected")) clients
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
