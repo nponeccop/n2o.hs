@@ -8,9 +8,9 @@ Installation & Launch
 =====================
 
 ```
-$ cabal install
-$ ./dist/build/StaticWebServer/StaticWebServer
+$ stack build 
+$ ./.stack-work/dist/x86_64/Cabal-1.22.4.0/build/StaticWebServer/StaticWebServer.exe
 ```
 
 Open http://localhost:8000/client.html in your browser.
-Make sure that `n2o` is running and feel free to test it.
+Make sure that `n2o.exe` is running and feel free to test it.
