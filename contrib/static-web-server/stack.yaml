@@ -1,0 +1,5 @@
+flags: {}
+packages:
+- '.'
+extra-deps: [http-server-1.0.6, utf8-string-0.3.8, mime-0.4.0.2]
+resolver: lts-3.9

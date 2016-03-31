@@ -96,13 +96,11 @@ For quickstart you need at least GHC via [MinGHC](https://github.com/fpco/minghc
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
    $ cabal update
    $ cabal install
-   $ nohup ./dist/build/n2o/n2o &
    $ cd contrib/static-web-server
-   $ cabal install
-   $ nohup ./dist/build/StaticWebServer/StaticWebServer &
-   $ open http://localhost:8000/sample/client.html
+   $ cabal install 
 ```
 
+Run `n2o.exe` and `StaticWebServer.exe` and open http://localhost:8000/sample/client.html in your browser.
 
 Idea
 ----
