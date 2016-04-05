@@ -33,11 +33,14 @@ The sending is unidirectional, just like the receiving: there are no need to wai
 Features
 --------
 
+Small and efficient protocol stack. The protocol is binary compatible with [original N2O protocol](http://5ht.co/n2o.htm) but implements a subset of the features (shown in **bold**). Basically it's BERT over Websockets only. See the upstream documentation for terminology.
+
 * Formatters: **BERT**, Text
 * Protocols: N2O
 * Endpoints: **WebSocket**, HTTP static
 * PubSub: Built-in
-* DOM Language: Blaze-HTML
+* Persistence: None
+* DOM Language: None
 
 ```
 $ cloc static src/Network/N2O* | tail -n+6 | sed s/--*// | column -t
@@ -101,12 +104,6 @@ For quickstart you need at least GHC via [MinGHC](https://github.com/fpco/minghc
 ```
 
 Run `n2o.exe` and `StaticWebServer.exe` and open http://localhost:8000/sample/client.html in your browser.
-
-Idea
-----
-
-Small and efficient protocol stack with endpoint formatters having
-session storage with select for pubsub. The protocol is binary compatible with original N2O protocol: http://5ht.co/n2o.htm
 
 Credits
 -------
