@@ -33,7 +33,17 @@ The sending is unidirectional, just like the receiving: there are no need to wai
 Features
 --------
 
-Small and efficient protocol stack. The protocol is binary compatible with [original N2O protocol](http://5ht.co/n2o.htm) but implements a subset of the features (shown in **bold**). Basically it's BERT over Websockets only. See the upstream documentation for terminology.
+Small and efficient protocol stack. Code size is one of the features we are proud of:
+
+```
+$ cloc static src/Network/N2O* | tail -n+6 | sed s/--*// | column -t
+Language    files  blank  comment  code
+JavaScript  6      29     10       147
+Haskell     2      47     6        138
+SUM:        8      76     16       285
+```
+
+The protocol is binary compatible with [original N2O protocol](http://5ht.co/n2o.htm). The browser part is taken as is from the Erlang version. However, the server implements only a subset of the upstream features (shown in **bold**). Basically it's BERT over Websockets only. See the upstream documentation for terminology.
 
 * Formatters: TEXT, JSON, XML, **BERT**, MessagePack
 * Protocols: **heart**, spa, bin, nitrogen, bpe, mq, roster, muc, rest, search
@@ -42,13 +52,6 @@ Small and efficient protocol stack. The protocol is binary compatible with [orig
 * Persistence: None
 * DOM Language: None
 
-```
-$ cloc static src/Network/N2O* | tail -n+6 | sed s/--*// | column -t
-Language    files  blank  comment  code
-JavaScript  6      28     10       147
-Haskell     2      48     6        136
-SUM:        8      76     16       283
-```
 
 Mac OS X
 --------
