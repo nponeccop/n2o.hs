@@ -35,9 +35,9 @@ Features
 
 Small and efficient protocol stack. The protocol is binary compatible with [original N2O protocol](http://5ht.co/n2o.htm) but implements a subset of the features (shown in **bold**). Basically it's BERT over Websockets only. See the upstream documentation for terminology.
 
-* Formatters: **BERT**, Text
-* Protocols: N2O
-* Endpoints: **WebSocket**, HTTP static
+* Formatters: TEXT, JSON, XML, **BERT**, MessagePack
+* Protocols: **heart**, spa, bin, nitrogen, bpe, mq, roster, muc, rest, search
+* Endpoints: gen_server, **ws**, http
 * PubSub: Built-in
 * Persistence: None
 * DOM Language: None
