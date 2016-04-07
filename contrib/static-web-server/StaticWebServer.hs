@@ -17,7 +17,7 @@ main = serverWith defaultConfig { srvLog = stdLogger, srvPort = 8000 }
     GET -> do
       let ext = takeExtension (url_path url)
       putStrLn $ url_path url
-      mb_txt <- try (readFile (extend $ url_path url))
+      mb_txt <- try (readFile $ url_path url)
       case mb_txt of
         Right a -> return $
           case ext of
@@ -31,8 +31,6 @@ main = serverWith defaultConfig { srvLog = stdLogger, srvPort = 8000 }
                   , body $ concatHtml
                     [ toHtml "I could not find "
                     , toHtml $ exportURL url { url_type = HostRelative }
-                    , toHtml ", so I made this with XHTML combinators. "
-                    , toHtml $ hotlink "client.html" (toHtml "Try this instead.")
                     ]
                   ]
 
