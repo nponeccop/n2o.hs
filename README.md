@@ -100,10 +100,7 @@ For quickstart you need at least GHC via [MinGHC](https://github.com/fpco/minghc
 
 ```
    $ git clone http://github.com/nponeccop/n2o.hs && cd n2o.hs
-   $ cabal update
-   $ cabal install
-   $ cd contrib/static-web-server
-   $ cabal install 
+   $ stack build
 ```
 
 Run `n2o.exe` and `StaticWebServer.exe` and open http://localhost:8000/sample/client.html in your browser.
