@@ -1,8 +1,9 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 import Network.HTTP.Server
 import Network.HTTP.Server.Logger
 import Network.URL as URL
 import Codec.Binary.UTF8.String
-import Control.Exception(try,SomeException)
+import Control.Exception(catch,IOException)
 import System.FilePath
 import Data.Map.Strict
 
@@ -15,13 +16,7 @@ main = serverWith defaultConfig { srvHost = "0.0.0.0", srvLog = stdLogger, srvPo
     GET -> do
       let ext = takeExtension (url_path url)
       putStrLn $ url_path url
-      mb_txt <- try (readFile $ url_path url)
-      case mb_txt of
-        Right a -> return $ sendText ext OK a
-        Left e -> return $ sendText ".html" NotFound "Not found"
-
-                 where _hack :: SomeException
-                       _hack = e   -- to specify the type
+      returnFileContent ext url `catch` (\(_ :: IOException) -> return $ sendText ".html" NotFound "Not Found")
 
     _ -> return $ sendText "" MethodNotAllowed "I don't understand"
 
@@ -38,3 +33,7 @@ ctm = fromList [ (".js","application/x-javascript")
                        , (".css", "text/css")
                        , (".html", "text/html")
                        ]
+
+returnFileContent e a = do
+  b <- readFile $ url_path a
+  return $ sendText e OK b
