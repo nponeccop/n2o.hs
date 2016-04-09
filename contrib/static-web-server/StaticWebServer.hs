@@ -16,9 +16,9 @@ main = serverWith defaultConfig { srvHost = "0.0.0.0", srvLog = stdLogger, srvPo
     GET -> do
       let ext = takeExtension (url_path url)
       putStrLn $ url_path url
-      returnFileContent ext url `catch` (\(_ :: IOException) -> return $ sendText ".html" NotFound "Not Found")
+      returnFileContent ext url `catch` (\(_ :: IOException) -> return $ err_response NotFound)
 
-    _ -> return $ sendText "" MethodNotAllowed "I don't understand"
+    _ -> return $ err_response MethodNotAllowed
 
 sendText e s v    = insertHeader HdrContentType (chooseCType e)
                 $ insertHeader HdrContentLength (show (length txt))
