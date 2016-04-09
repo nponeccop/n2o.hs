@@ -1,15 +1,13 @@
 import Network.HTTP.Server
 import Network.HTTP.Server.Logger
-import Network.HTTP.Server.HtmlForm as Form
 import Network.URL as URL
 import Text.XHtml
 import Codec.Binary.UTF8.String
 import Control.Exception(try,SomeException)
 import System.FilePath
-import Data.List(isPrefixOf)
 
 main :: IO ()
-main = serverWith defaultConfig { srvLog = stdLogger, srvPort = 8000 }
+main = serverWith defaultConfig { srvHost = "0.0.0.0", srvLog = stdLogger, srvPort = 8000 }
      $ \_ url request ->
 
   case rqMethod request of
@@ -37,7 +35,7 @@ main = serverWith defaultConfig { srvLog = stdLogger, srvPort = 8000 }
                  where _hack :: SomeException
                        _hack = e   -- to specify the type
 
-    _ -> return $ sendHTML BadRequest $ toHtml "I don't understand"
+    _ -> return $ sendHTML MethodNotAllowed $ toHtml "I don't understand"
 
 sendText       :: StatusCode -> String -> Response String
 sendText s v    = insertHeader HdrContentLength (show (length txt))
@@ -57,7 +55,3 @@ sendScript s v  = insertHeader HdrContentType "application/x-javascript"
 sendStyle     :: StatusCode -> String -> Response String
 sendStyle s v  = insertHeader HdrContentType "text/css"
                 $ sendText s v
-
-extend url = case take 6 url of
-  "static" -> "../../" ++ url
-  _        -> "../../sample/" ++ url
