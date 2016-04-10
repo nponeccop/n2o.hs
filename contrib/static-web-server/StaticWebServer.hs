@@ -1,34 +1,37 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 import Network.HTTP.Server
-import Network.HTTP.Server.Logger
-import Network.URL as URL
-import Control.Exception(catch,IOException)
+import Network.URL
+import System.Directory
 import System.FilePath
 import Data.Map.Strict
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as BS
 
-main = serverWith defaultConfig { srvHost = "0.0.0.0" } $ \_ url request -> serve (rqMethod request) (url_path url)
+main = serverWith defaultConfig { srvHost = "0.0.0.0" }
+    $ \_ url request -> serve (rqMethod request) (url_path url)
 
-serve GET path = returnFileContent (BS.pack $ takeExtension path) path `catch` (\(_ :: IOException) -> return $ err_response NotFound)
+serve GET path = do
+    f <- doesFileExist path
+    if f
+        then BS.readFile path >>= sendFile path
+        else return $ err_response NotFound
 
 serve _ _ = return $ err_response MethodNotAllowed
 
-sendText e v
-    = Response
+sendFile filePath fileData
+    = return $ Response
     { rspCode = (2,0,0)
     , rspReason = "OK"
     , rspHeaders =
-      [ Header HdrContentType $ findWithDefault "application/octet-stream" e ctm
-      , Header HdrContentLength $ show $ BS.length v
+      [ Header HdrContentType $ findWithDefault "application/octet-stream" (takeExtension filePath) ctm
+      , Header HdrContentLength $ show $ BS.length fileData
       , Header HdrContentEncoding "UTF-8"
       ]
-    , rspBody = v
+    , rspBody = fileData
     }
 
-ctm = fromList [ (".js","application/x-javascript")
-               , (".css", "text/css")
-               , (".html", "text/html")
-               ]
+ctm = fromList
+    [ (".js"  , "application/x-javascript")
+    , (".css" , "text/css")
+    , (".html", "text/html")
+    ]
 
-returnFileContent e a = sendText e <$> BS.readFile a
