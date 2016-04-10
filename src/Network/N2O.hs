@@ -4,6 +4,8 @@ module Network.N2O (
     send,
     call,
     assign,
+    joinSession,
+    log,
     Network.N2O.runServer,
     broadcast
 ) where
@@ -15,6 +17,7 @@ import Data.BERT
 import Data.Binary
 import Data.Text.Encoding
 import Network.N2O.PubSub
+import Prelude hiding (log)
 
 import qualified Data.Text as T
 import Network.WebSockets as WS hiding (send)
@@ -31,6 +34,34 @@ eval x = encode $ TupleTerm [AtomTerm "io", showBERT $ t2b x, NilTerm]
 
 call fun arg = T.concat [fun,  "('", arg, "');"]
 assign elem arg = T.concat [elem, ".innerHTML='", arg, "';"]
+stylize (elem,arg) = T.concat [elem, ".style='", arg, "';"]
+log msg = insertBottom "p" msg "messages"
+
+joinSession = T.concat $
+  fmap stylize [ ("qi('join-section')", "display:none;")
+               , ("qi('chat-section')", "display:block;")
+               , ("qi('users-section')", "display:block;")
+               ]
+
+insertBottom :: T.Text -> T.Text -> T.Text -> T.Text
+insertBottom tag val tgt =
+  T.concat [ "(function(){ var div = qn('", tag
+           , "'); div.innerHTML = '", val
+           , "'; var t = qi('",  tgt
+           , "'); t.appendChild(div); t.scrollTop = t.scrollHeight; })();"
+           ]
+
+insertTop :: T.Text -> T.Text -> T.Text -> T.Text
+insertTop tag val tgt =
+  T.concat [ "(function(){ var t = qi('", tgt
+           , "'); t.insertBefore((function(){ var div = qn('", tag
+           , "'); div.innerHTML = '", val
+           , "'; return div; })(), t.firstChild); t.scrollTop = 0})()"
+           ]
+
+remove :: T.Text -> T.Text
+remove tgt =
+  T.concat [ "var x=qi('", tgt, "'); x && x.parentNode.removeChild(x);" ]
 -- call0 fun = fun <> "()"
 
 application nextMessage handle state pending = do
