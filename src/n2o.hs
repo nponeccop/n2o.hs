@@ -41,7 +41,6 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
         if ce 
             then alert entry "User already exists"
             else do
-                -- send entry $ call "joinSession" ""
                 send entry $ joinSession
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
