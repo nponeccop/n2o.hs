@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 import Network.HTTP.Server
 import Network.URL
 import System.Directory
