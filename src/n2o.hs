@@ -11,6 +11,7 @@ import Network.N2O
 import Network.N2O.PubSub (setState, Entry(..), Connections(..))
 import Data.IxSet as I
 import GHC.MVar
+import Prelude hiding (log)
 
 main :: IO ()
 main = runServer "0.0.0.0" 9160 handle loggedOff
@@ -18,7 +19,7 @@ main = runServer "0.0.0.0" 9160 handle loggedOff
 loggedOff :: Maybe T.Text
 loggedOff = Nothing
 
-sendMessage text = broadcast $ call "log" text
+sendMessage text = broadcast $ log text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
@@ -40,11 +41,12 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
         if ce 
             then alert entry "User already exists"
             else do
-                send entry $ call "joinSession" ""
+                -- send entry $ call "joinSession" ""
+                send entry $ joinSession
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
                 let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcast (assign "qi('users')" foo <> call "log" (dname <> " joined")) clients
+                broadcast (assign "qi('users')" foo <> log (dname <> " joined")) clients
         
 handle state entry [AtomTerm "MSG", BinaryTerm text]
     = do
@@ -56,7 +58,7 @@ handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         clients <- loggedOn state
         let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcast (assign "qi('users')" foo <> call "log" (getUser entry <> " disconnected")) clients
+        broadcast (assign "qi('users')" foo <> log (getUser entry <> " disconnected")) clients
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
