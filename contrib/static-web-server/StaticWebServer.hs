@@ -3,7 +3,7 @@ import Network.HTTP.Server
 import Network.URL
 import System.Directory
 import System.FilePath
-import Data.Map.Strict
+import qualified Data.Map as M
 import qualified Data.ByteString as BS
 
 main = serverWith defaultConfig { srvHost = "0.0.0.0" }
@@ -22,14 +22,14 @@ sendFile filePath fileData
     { rspCode = (2,0,0)
     , rspReason = "OK"
     , rspHeaders =
-      [ Header HdrContentType $ findWithDefault "application/octet-stream" (takeExtension filePath) ctm
+      [ Header HdrContentType $ M.findWithDefault "application/octet-stream" (takeExtension filePath) ctm
       , Header HdrContentLength $ show $ BS.length fileData
       , Header HdrContentEncoding "UTF-8"
       ]
     , rspBody = fileData
     }
 
-ctm = fromList
+ctm = M.fromList
     [ (".js"  , "application/x-javascript")
     , (".css" , "text/css")
     , (".html", "text/html")
