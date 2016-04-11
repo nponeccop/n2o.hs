@@ -23,15 +23,9 @@ loggedOff = Nothing
 chatLog :: T.Text -> Stmt ()
 chatLog msg = ExpStmt $ JCall (JConst "insertBottom") (JString "p", JString $ T.unpack msg, JString "messages")
 
-joinSession = foldl Sequence EmptyBlock
-    [ jqHide "join-section"
-    , jqShow "chat-section"
-    , jqShow "users-section"
-    ]
 
-sendAll state text = loggedOn state >>= sendMessage text
 
-sendMessage text = broadcast $ T.pack $ show $ toBlock $ chatLog text
+sendMessage state text = loggedOn state >>= broadcast (T.pack $ show $ toBlock $ chatLog text)
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
@@ -46,7 +40,7 @@ updateUsers state msg = do
     clients <- loggedOn state
     let allUsersHtml = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
     broadcast (assign "qi('users')" allUsersHtml) clients
-    sendAll state msg
+    sendMessage state msg
 
 handle :: MVar (Connections T.Text) -> Entry T.Text -> [Term] -> IO ()
 
@@ -59,13 +53,16 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
         if ce 
             then alert entry "User already exists"
             else do
-                send entry $ T.pack $ show joinSession
-
                 setState state (eSocketId entry) $ Just dname
+                send entry $ T.pack $ show $ foldl Sequence EmptyBlock
+                    [ jqHide "join-section"
+                    , jqShow "chat-section"
+                    , jqShow "users-section"
+                    ]
                 updateUsers state $ dname <> " joined"
 
 handle state entry [AtomTerm "MSG", BinaryTerm text]
-    = sendAll state $ getUser entry <> ": " <> b2t text
+    = sendMessage state $ getUser entry <> ": " <> b2t text
 
 handle state entry [AtomTerm "N2O_DISCONNECT"]
     = updateUsers state $ getUser entry <> " disconnected"
