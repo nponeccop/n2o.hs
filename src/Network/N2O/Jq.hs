@@ -10,7 +10,7 @@ instance IsClass El
 qi :: String -> Exp El
 qi s = JCall (JConst "qi") (JString s)
 
-jqSetProp obj prop val = ExpStmt $ JAssign (JDerefVar (qi "aaa") prop) val
+jqSetProp obj prop val = ExpStmt $ JAssign (JDerefVar obj prop) val
 
 jqHide id = jqSetProp (qi id) "style.display" $ JString "none"
 jqShow id = jqSetProp (qi id) "style.display" $ JString "block"

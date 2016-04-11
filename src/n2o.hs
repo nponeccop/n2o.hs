@@ -53,7 +53,8 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
         if ce 
             then alert entry "User already exists"
             else do
-                send entry $ call "joinSession" ""
+                send entry $ T.pack $ show $ joinSession
+
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
                 let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
