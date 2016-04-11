@@ -29,9 +29,9 @@ joinSession = foldl Sequence EmptyBlock $
     , jqShow "users-section"
     ]
 
-sendMessage text foo = do
-    broadcast (T.pack $ show $ toBlock $ chatLog text) foo
-    print     $ T.pack $ show $ toBlock $ chatLog text
+sendAll state text = loggedOn state >>= sendMessage text
+
+sendMessage text = broadcast $ T.pack $ show $ toBlock $ chatLog text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
@@ -62,7 +62,7 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
 
                 setState state (eSocketId entry) $ Just dname
                 updateUsers state
-                loggedOn state >>= sendMessage (dname <> " joined")
+                sendAll $ dname <> " joined"
 
 handle state entry [AtomTerm "MSG", BinaryTerm text]
     = loggedOn state >>= sendMessage (getUser entry <> ": " <> b2t text)
@@ -70,7 +70,7 @@ handle state entry [AtomTerm "MSG", BinaryTerm text]
 handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
         updateUsers state
-        loggedOn state >>= sendMessage (call "log" (getUser entry <> " disconnected"))
+        sendAll state $ getUser entry <> " disconnected"
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
