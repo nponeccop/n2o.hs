@@ -53,7 +53,7 @@ iocatch :: IOException -> IO ()
 iocatch _ = print "IOException"
 
 runServer ip port handle userState = do
-    print "Started"
+    putStrLn $ "Listening on " ++ ip ++ ":" ++ show port
     state <- newMVar newChannel
     WS.runServer ip port $ application nextMessage handle state
 
@@ -64,30 +64,24 @@ nextMessage handle state connection socketId = do
     entry <- byUnique state socketId
     handle state entry message
 
---simpleApp x = application simpleLoop x 
-
 receiveN2O connection = do
     message    <- WS.receiveDataMessage connection
     case message of
         WS.Text "N2O," -> return ()
-        WS.Binary _ -> putStrLn "Protocol violation 4"
-        WS.Text x -> putStrLn "Protocol violation 3" >> print x
+        WS.Binary _ -> error "Protocol violation 4"
+        WS.Text x -> error "Protocol violation 3"
 
 receiveMessage connection = do
     let loop = receiveMessage connection
     message    <- WS.receiveDataMessage connection
-    putStrLn "message"
-    print message
     case message of
-         WS.Binary x -> print "Decoding" >> case decode x of
-            TupleTerm x -> print "Decoded" >> return x
-            _ -> print "haha" >> error "Protocol violation"
+         WS.Binary x -> case decode x of
+            TupleTerm x -> return x
+            _ -> error "Protocol violation"
 
          WS.Text x
-             | x == "PING" -> putStrLn "PING" >> loop
-             | otherwise  -> do
-                print x
-                error "protocol violation 2"
+             | x == "PING" -> loop
+             | otherwise  -> error "protocol violation 2"
 
 send entry = WS.sendBinaryData (eConn entry) . eval
 
