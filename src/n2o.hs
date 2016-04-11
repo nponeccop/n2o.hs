@@ -23,7 +23,7 @@ loggedOff = Nothing
 chatLog :: T.Text -> Stmt ()
 chatLog msg = ExpStmt $ JCall (JConst "insertBottom") (JString "p", JString $ T.unpack msg, JString "messages")
 
-joinSession = foldl Sequence EmptyBlock $
+joinSession = foldl Sequence EmptyBlock
     [ jqHide "join-section"
     , jqShow "chat-section"
     , jqShow "users-section"
@@ -58,7 +58,7 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
         if ce 
             then alert entry "User already exists"
             else do
-                send entry $ T.pack $ show $ joinSession
+                send entry $ T.pack $ show joinSession
 
                 setState state (eSocketId entry) $ Just dname
                 updateUsers state
