@@ -23,8 +23,6 @@ loggedOff = Nothing
 chatLog :: T.Text -> Stmt ()
 chatLog msg = ExpStmt $ JCall (JConst "insertBottom") (JString "p", JString $ T.unpack msg, JString "messages")
 
-
-
 sendMessage state text = loggedOn state >>= broadcast (T.pack $ show $ toBlock $ chatLog text)
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
