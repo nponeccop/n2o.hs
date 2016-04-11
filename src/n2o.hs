@@ -58,7 +58,8 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                 setState state (eSocketId entry) $ Just dname
                 clients <- loggedOn state
                 let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcast (assign "qi('users')" foo <> call "log" (dname <> " joined")) clients
+                broadcast (assign "qi('users')" foo) clients
+                sendMessage (dname <> " joined") clients
         
 handle state entry [AtomTerm "MSG", BinaryTerm text]
     = do
