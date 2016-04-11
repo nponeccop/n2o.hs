@@ -9,9 +9,9 @@ function log(data) { insertBottom('p', data, 'messages'); }
 function warning(data) { insertBottom('p', data, 'warnings'); ws.close(); }
 
 function joinSession() { 
-    qi('join-section').style = 'display:none;';
-    qi('chat-section').style = 'display:block';
-    qi('users-section').style = 'display:block';
+    qi('join-section').style.display = 'none';
+    qi('chat-section').style.display = 'block';
+    qi('users-section').style.display = 'block';
 }
 
 document.addEventListener("DOMContentLoaded", function(event) { 
