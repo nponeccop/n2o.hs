@@ -11,6 +11,7 @@ build-type:          Simple
 extra-source-files:
   README.md
   src/Network/N2O.hs
+  src/Network/N2O/Jq.hs
   src/Network/N2O/PubSub.hs
 cabal-version:       >=1.10
 source-repository head
@@ -28,9 +29,11 @@ library
     , binary
     , bytestring
     , ixset
+    , HJavaScript
   exposed-modules:
-    Network.N2O,
-    Network.N2O.PubSub
+      Network.N2O
+    , Network.N2O.Jq
+    , Network.N2O.PubSub
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -46,5 +49,6 @@ executable n2o
     , binary
     , bytestring
     , ixset
+    , HJavaScript
   hs-source-dirs:      src
   default-language:    Haskell2010

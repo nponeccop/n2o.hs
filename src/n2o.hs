@@ -6,8 +6,10 @@ import Data.Char (isPunctuation, isSpace)
 import Data.Maybe
 import Data.Monoid ((<>))
 import qualified Data.Text as T
+import Language.HJavaScript.Syntax hiding (call)
 
 import Network.N2O
+import Network.N2O.Jq
 import Network.N2O.PubSub (setState, Entry(..), Connections(..))
 import Data.IxSet as I
 import GHC.MVar
@@ -18,7 +20,18 @@ main = runServer "0.0.0.0" 9160 handle loggedOff
 loggedOff :: Maybe T.Text
 loggedOff = Nothing
 
-sendMessage text = broadcast $ call "log" text
+chatLog :: T.Text -> Stmt ()
+chatLog msg = ExpStmt $ JCall (JConst "insertBottom") (JString "p", JString $ T.unpack msg, JString "messages")
+
+joinSession = foldl Sequence EmptyBlock $
+    [ jqHide "join-section"
+    , jqShow "chat-section"
+    , jqShow "users-section"
+    ]
+
+sendMessage text foo = do
+    broadcast (T.pack $ show $ toBlock $ chatLog text) foo
+    print     $ T.pack $ show $ toBlock $ chatLog text
 
 loggedOn state = toList . getGT loggedOff . coSet <$> readMVar state
 
