@@ -42,10 +42,11 @@ invalidName name = T.null name || T.any isPunctuation name || T.any isSpace name
 
 clientExists state name = not . I.null . getEQ (Just name) . coSet <$> readMVar state
 
-updateUsers state = do
+updateUsers state msg = do
     clients <- loggedOn state
     let allUsersHtml = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
     broadcast (assign "qi('users')" allUsersHtml) clients
+    sendAll state msg
 
 handle :: MVar (Connections T.Text) -> Entry T.Text -> [Term] -> IO ()
 
@@ -61,16 +62,13 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                 send entry $ T.pack $ show joinSession
 
                 setState state (eSocketId entry) $ Just dname
-                updateUsers state
-                sendAll $ dname <> " joined"
+                updateUsers state $ dname <> " joined"
 
 handle state entry [AtomTerm "MSG", BinaryTerm text]
-    = loggedOn state >>= sendMessage (getUser entry <> ": " <> b2t text)
+    = sendAll state $ getUser entry <> ": " <> b2t text
 
 handle state entry [AtomTerm "N2O_DISCONNECT"]
-    = do
-        updateUsers state
-        sendAll state $ getUser entry <> " disconnected"
+    = updateUsers state $ getUser entry <> " disconnected"
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
