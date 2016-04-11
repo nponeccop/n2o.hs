@@ -42,6 +42,11 @@ invalidName name = T.null name || T.any isPunctuation name || T.any isSpace name
 
 clientExists state name = not . I.null . getEQ (Just name) . coSet <$> readMVar state
 
+updateUsers state = do
+    clients <- loggedOn state
+    let allUsersHtml = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
+    broadcast (assign "qi('users')" allUsersHtml) clients
+
 handle :: MVar (Connections T.Text) -> Entry T.Text -> [Term] -> IO ()
 
 handle state entry [AtomTerm "LOGON", BinaryTerm name]
@@ -56,22 +61,16 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                 send entry $ T.pack $ show $ joinSession
 
                 setState state (eSocketId entry) $ Just dname
-                clients <- loggedOn state
-                let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-                broadcast (assign "qi('users')" foo) clients
-                sendMessage (dname <> " joined") clients
-        
+                updateUsers state
+                loggedOn state >>= sendMessage (dname <> " joined")
+
 handle state entry [AtomTerm "MSG", BinaryTerm text]
-    = do
-        clients <- loggedOn state
-        let ctext = getUser entry <> ": " <> b2t text
-        sendMessage ctext clients
+    = loggedOn state >>= sendMessage (getUser entry <> ": " <> b2t text)
 
 handle state entry [AtomTerm "N2O_DISCONNECT"]
     = do
-        clients <- loggedOn state
-        let foo = foldMap ((\x -> "<li>" <> x <> "</li>") . fromJust . eUser) clients
-        broadcast (assign "qi('users')" foo <> call "log" (getUser entry <> " disconnected")) clients
+        updateUsers state
+        loggedOn state >>= sendMessage (call "log" (getUser entry <> " disconnected"))
 
 handle _state _entry _ = putStrLn "Protocol violation"
 
