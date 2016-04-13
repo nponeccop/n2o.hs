@@ -46,16 +46,16 @@ instance Ord Connection where
 instance Show Connection where
     show = const "{WS.Connection}"
 
-type SocketId = Int
+newtype SocketId = SocketId Int deriving (Typeable, Show, Ord, Eq, Data)
 
-data Connections a = Connections { coSet :: IxSet (Entry a), coId :: SocketId }
+data Connections a = Connections { coSet :: IxSet (Entry a), coId :: SocketId}
 
 
 initialId :: SocketId
-initialId = 0
+initialId = SocketId 0
 
 nextId :: SocketId -> SocketId
-nextId = succ
+nextId (SocketId a) = SocketId (succ a)
 
 newChannel :: (Data a, Ord a) => Connections a
 newChannel = Connections I.empty initialId
