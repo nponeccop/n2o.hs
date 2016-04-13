@@ -7,6 +7,7 @@ module Network.N2O.PubSub (
     Entry(..),
     Connections(..),
     setState
+  , SocketId
 ) where
 
 import Control.Concurrent

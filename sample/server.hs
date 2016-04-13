@@ -1,8 +1,10 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
 module Main (main) where
+import Control.Concurrent.MVar
 import Data.BERT (Term(..))
 import Data.Char (isPunctuation, isSpace)
+import Data.Data
 import Data.Maybe
 import Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -10,12 +12,13 @@ import Language.HJavaScript.Syntax hiding (call)
 
 import Network.N2O
 import Network.N2O.Jq
-import Network.N2O.PubSub (setState, Entry(..), Connections(..))
+import Network.N2O.PubSub
 import Data.IxSet as I
-import GHC.MVar
 
 main :: IO ()
-main = runServer "0.0.0.0" 9160 handle loggedOff
+main = do
+    pubSub <- newMVar I.empty
+    runServer "0.0.0.0" 9160 (handle pubSub) loggedOff
 
 loggedOff :: Maybe T.Text
 loggedOff = Nothing
@@ -40,9 +43,9 @@ updateUsers state msg = do
     broadcast (assign "qi('users')" allUsersHtml) clients
     sendMessage state msg
 
-handle :: MVar (Connections T.Text) -> Entry T.Text -> [Term] -> IO ()
+handle :: MVar (I.IxSet ChannelData) -> MVar (Connections T.Text) -> Entry T.Text -> [Term] -> IO ()
 
-handle state entry [AtomTerm "LOGON", BinaryTerm name]
+handle pubSub state entry [AtomTerm "LOGON", BinaryTerm name]
   | invalidName $ b2t name = alert entry "Name cannot contain punctuation or whitespace, and cannot be empty"
     | otherwise = do
         let dname = b2t name
@@ -57,15 +60,41 @@ handle state entry [AtomTerm "LOGON", BinaryTerm name]
                     , jqShow "chat-section"
                     , jqShow "users-section"
                     ]
+                sub pubSub (eSocketId entry) All
                 updateUsers state $ dname <> " joined"
 
-handle state entry [AtomTerm "MSG", BinaryTerm text]
-    = sendMessage state $ getUser entry <> ": " <> b2t text
+handle pubSub state entry [AtomTerm "MSG", BinaryTerm text]
+    = pub pubSub All state $ T.pack $ show $ chatLog $ getUser entry <> ": " <> b2t text
 
-handle state entry [AtomTerm "N2O_DISCONNECT"]
-    = updateUsers state $ getUser entry <> " disconnected"
+handle pubSub state entry [AtomTerm "N2O_DISCONNECT"]
+    = do
+        unsubEverything pubSub (eSocketId entry)
+        updateUsers state $ getUser entry <> " disconnected"
 
-handle _state _entry _ = putStrLn "Protocol violation"
+handle _ _state _entry _ = putStrLn "Protocol violation"
 
 getUser :: Entry T.Text -> T.Text
 getUser entry = fromMaybe "Someone" $ eUser entry
+
+data ChannelName = All deriving (Data, Ord, Eq, Show)
+
+data ChannelData = ChannelData
+    { chSocket :: SocketId
+    , chChannel :: ChannelName
+    } deriving (Data, Typeable, Ord, Eq)
+
+instance Indexable ChannelData where
+    empty = ixSet
+        [ ixGen (I.Proxy :: I.Proxy SocketId)
+        , ixGen (I.Proxy :: I.Proxy ChannelName)
+        ]
+
+sub pubSub channel id = modifyMVar_ pubSub $ return . I.insert (ChannelData channel id)
+
+pub pubSub channel state text = do
+    socketIds <- map chSocket . I.toList . (I.@= channel) <$> readMVar pubSub
+    l <- I.toList . (I.@+ socketIds) . coSet <$> readMVar state
+    print l
+    broadcast text l
+
+unsubEverything pubSub id = modifyMVar_ pubSub $ return . I.deleteIx id
