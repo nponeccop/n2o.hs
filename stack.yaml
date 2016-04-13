@@ -8,4 +8,5 @@ extra-deps:
 - http-server-1.0.6
 - utf8-string-0.3.8
 - mime-0.4.0.2
+- HJavaScript-0.4.7
 resolver: nightly-2016-02-28
