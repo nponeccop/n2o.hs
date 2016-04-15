@@ -3,5 +3,5 @@
 dist/
 .cabal-sandbox/
 node_modules/
-cabal-sandbox.config
+cabal.sandbox.config
 .stack-work/
