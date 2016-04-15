@@ -4,9 +4,8 @@ module Network.N2O.PubSub (
     byUnique,
     unsubscribe,
     newChannel,
-    Entry(..),
-    Connections(..),
-    setState
+    Connections(..)
+  , setState
   , SocketId
 ) where
 
@@ -27,15 +26,6 @@ instance Data Connection where
     toConstr =  error "WS.Connection toConstr is unimplemented in PubSub.hs"
     dataTypeOf = unimpl "WS.Connection dataTypeOf"
 
-
-data Entry a = Entry { eUser :: Maybe a, eSocketId :: SocketId, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
-
-instance (Data a, Ord a) => Indexable (Entry a) where
-    empty = ixSet
-        [ ixGen (Proxy :: Proxy SocketId)
-        , ixGen (Proxy :: Proxy (Maybe a))
-        ]
-
 instance Eq Connection where
     (==) = unimpl "(==)"
 
@@ -47,7 +37,7 @@ instance Show Connection where
 
 newtype SocketId = SocketId Int deriving (Typeable, Show, Ord, Eq, Data)
 
-data Connections a = Connections { coSet :: IxSet (Entry a), coId :: SocketId}
+data Connections a = Connections { coSet :: IxSet a, coId :: SocketId}
 
 
 initialId :: SocketId
@@ -56,20 +46,18 @@ initialId = SocketId 0
 nextId :: SocketId -> SocketId
 nextId (SocketId a) = SocketId (succ a)
 
-newChannel :: (Data a, Ord a) => Connections a
+newChannel :: (Indexable a) => Connections a
 newChannel = Connections I.empty initialId
 
-subscribe :: (Data a, Ord a) => WS.Connection -> Connections a -> (Connections a, SocketId)
-subscribe conn Connections {coSet, coId} = (Connections {
-    coId = nextId coId, coSet = I.insert (Entry Nothing coId conn) coSet}, coId)
+subscribe conn emptyEntry Connections {coSet, coId} = (Connections {
+    coId = nextId coId, coSet = I.insert (emptyEntry coId conn) coSet}, coId)
 
-unsubscribe :: (Data a, Ord a) => SocketId -> Connections a -> Connections a
+unsubscribe :: (Indexable a, Ord a, Typeable a) => SocketId -> Connections a -> Connections a
 unsubscribe socketId (co @ Connections { coSet }) = co { coSet = I.deleteIx socketId coSet }
 
-setState :: (Data a, Ord a) => MVar (Connections a) -> SocketId -> Maybe a -> IO ()
-setState state socketId userData = modifyMVar_ state $ return . foo where
+setState state socketId modify = modifyMVar_ state $ return . foo where
     foo co = co { coSet = mo $ coSet co }
-    mo s = I.updateIx socketId (old { eUser = userData }) s where
+    mo s = I.updateIx socketId (modify old) s where
         old = fromJust $ getOne $ getEQ socketId s
 
 byUnique state socketId = fromJust . getOne . getEQ socketId . coSet <$> readMVar state

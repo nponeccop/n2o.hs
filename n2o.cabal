@@ -48,5 +48,6 @@ executable n2o-chat
     , bert
     , ixset
     , HJavaScript
+    , websockets
   hs-source-dirs:      sample
   default-language:    Haskell2010

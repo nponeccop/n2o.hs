@@ -31,12 +31,11 @@ eval x = encode $ TupleTerm [AtomTerm "io", showBERT $ t2b x, NilTerm]
 
 call fun arg = T.concat [fun,  "('", arg, "');"]
 assign elem arg = T.concat [elem, ".innerHTML='", arg, "';"]
--- call0 fun = fun <> "()"
 
-application nextMessage handle state pending = do
+application emptyEntry nextMessage handle state pending = do
     connection <- WS.acceptRequest pending
     putStrLn "accepted"
-    socketId <- modifyMVar state $ return . subscribe connection
+    socketId <- modifyMVar state $ return . subscribe connection emptyEntry
     putStrLn $ "Connected socketId = " ++ show socketId
 
     (receiveN2O connection >> forever (nextMessage handle state connection socketId)) `catch` somecatch `catch` iocatch -- `catch` (\e -> print $ "Got exception " ++ show (e::WS.ConnectionException)) `catch` somecatch
@@ -52,10 +51,10 @@ somecatch e = print "SomeException" >> print e
 iocatch :: IOException -> IO ()
 iocatch _ = print "IOException"
 
-runServer ip port handle userState = do
+runServer ip port handle emptyEntry = do
     putStrLn $ "Listening on " ++ ip ++ ":" ++ show port
     state <- newMVar newChannel
-    WS.runServer ip port $ application nextMessage handle state
+    WS.runServer ip port $ application emptyEntry nextMessage handle state
 
 nextMessage handle state connection socketId = do
     message <- receiveMessage connection
@@ -82,7 +81,7 @@ receiveMessage connection = do
              | x == "PING" -> loop
              | otherwise  -> error "protocol violation 2"
 
-send entry = WS.sendBinaryData (eConn entry) . eval
+send conn = WS.sendBinaryData conn . eval
 
 broadcast message
     = mapM_ $ \entry -> send entry message
