@@ -80,7 +80,7 @@ data ChannelName = All deriving (Data, Ord, Eq, Show)
 
 data ChannelData = ChannelData
     { chSocket :: SocketId
-    , chChannel :: ChannelName
+    , _chChannel :: ChannelName
     } deriving (Data, Typeable, Ord, Eq)
 
 instance Indexable ChannelData where
@@ -94,7 +94,6 @@ sub pubSub channel id = modifyMVar_ pubSub $ return . I.insert (ChannelData chan
 pub pubSub channel state text = do
     socketIds <- map chSocket . I.toList . (I.@= channel) <$> readMVar pubSub
     l <- I.toList . (I.@+ socketIds) . coSet <$> readMVar state
-    print l
     broadcast text l
 
 unsubEverything pubSub id = modifyMVar_ pubSub $ return . I.deleteIx id

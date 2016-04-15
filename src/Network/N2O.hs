@@ -59,7 +59,6 @@ runServer ip port handle userState = do
 
 nextMessage handle state connection socketId = do
     message <- receiveMessage connection
-    print "Parsed"
     print message
     entry <- byUnique state socketId
     handle state entry message
@@ -69,7 +68,7 @@ receiveN2O connection = do
     case message of
         WS.Text "N2O," -> return ()
         WS.Binary _ -> error "Protocol violation 4"
-        WS.Text x -> error "Protocol violation 3"
+        WS.Text _ -> error "Protocol violation 3"
 
 receiveMessage connection = do
     let loop = receiveMessage connection

@@ -27,7 +27,6 @@ instance Data Connection where
     toConstr =  error "WS.Connection toConstr is unimplemented in PubSub.hs"
     dataTypeOf = unimpl "WS.Connection dataTypeOf"
 
---data Foo  = Foo Int | All deriving (Ord, Eq, Show, Typeable, Data)
 
 data Entry a = Entry { eUser :: Maybe a, eSocketId :: SocketId, eConn :: WS.Connection} deriving (Typeable, Show, Ord, Eq, Data)
 
