@@ -29,10 +29,12 @@ library
     , bytestring
     , ixset
     , HJavaScript
+    , nonce
   exposed-modules:
       Network.N2O
     , Network.N2O.Jq
     , Network.N2O.PubSub
+    , Network.N2O.Session
   hs-source-dirs:      src
   default-language:    Haskell2010
 
